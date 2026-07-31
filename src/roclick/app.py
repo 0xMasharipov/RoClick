@@ -12,6 +12,7 @@ from typing import Any
 import customtkinter as ctk
 from PIL import Image
 
+from .clicker import create_clicker
 from .window_utils import get_foreground_window_title
 
 
@@ -25,6 +26,9 @@ SECONDARY = "#6E6E73"
 BORDER = "#FFFFFF"
 WINDOW_WIDTH = 480
 WINDOW_HEIGHT = 760
+MIN_INTERVAL_MS = 1
+MAX_INTERVAL_MS = 1000
+DEFAULT_INTERVAL_MS = 10
 
 
 def asset_path(name: str) -> Path:
@@ -36,7 +40,7 @@ def asset_path(name: str) -> Path:
 @dataclass(frozen=True)
 class ClickSettings:
     interval_ms: int
-    button: Any
+    button_name: str
     lock_to_target: bool
     target_title: str
 
@@ -54,18 +58,18 @@ class RoClickApp(ctk.CTk):
 
         self._keyboard_module, self._mouse_module = self._load_input_modules()
         self._command_queue: queue.Queue[str] = queue.Queue()
-        self._mouse_controller = self._mouse_module.Controller()
+        self._clicker = create_clicker(self._mouse_module)
         self._state_lock = threading.Lock()
         self._active_event = threading.Event()
         self._shutdown_event = threading.Event()
         self._target_title = ""
-        self._interval_ms = tk.IntVar(value=100)
+        self._interval_ms = tk.IntVar(value=DEFAULT_INTERVAL_MS)
         self._button_name = tk.StringVar(value="Left")
         self._lock_enabled = tk.BooleanVar(value=False)
         self._status_text = tk.StringVar(value="Stopped")
         self._helper_text = tk.StringVar(value="Ready. Press 1 to start.")
         self._target_text = tk.StringVar(value="No target selected")
-        self._interval_text = tk.StringVar(value="100 ms")
+        self._interval_text = tk.StringVar(value=f"{DEFAULT_INTERVAL_MS} ms")
         self._background_image: ctk.CTkImage | None = None
         self._logo_image: ctk.CTkImage | None = None
         self._blocky_asset_image: ctk.CTkImage | None = None
@@ -212,9 +216,9 @@ class RoClickApp(ctk.CTk):
 
         slider = ctk.CTkSlider(
             settings_card,
-            from_=50,
-            to=1000,
-            number_of_steps=190,
+            from_=MIN_INTERVAL_MS,
+            to=MAX_INTERVAL_MS,
+            number_of_steps=MAX_INTERVAL_MS - MIN_INTERVAL_MS,
             progress_color=BLUE,
             button_color=BLUE,
             button_hover_color="#006EDB",
@@ -333,8 +337,8 @@ class RoClickApp(ctk.CTk):
             pass
 
     def _set_interval(self, value: float) -> None:
-        interval = int(round(value / 5) * 5)
-        interval = max(50, min(1000, interval))
+        interval = int(round(value))
+        interval = max(MIN_INTERVAL_MS, min(MAX_INTERVAL_MS, interval))
         self._interval_ms.set(interval)
         self._interval_text.set(f"{interval} ms")
 
@@ -393,6 +397,9 @@ class RoClickApp(ctk.CTk):
                 self.start_clicking()
             elif command == "stop":
                 self.stop_clicking()
+            elif command == "click_error":
+                self.stop_clicking()
+                self._helper_text.set("Clicking stopped. Windows rejected input.")
 
         if not self._shutdown_event.is_set():
             self.after(50, self._drain_command_queue)
@@ -424,16 +431,11 @@ class RoClickApp(ctk.CTk):
         self._primary_button.configure(text="Start (1)", fg_color=BLUE, hover_color="#006EDB")
 
     def _current_settings(self) -> ClickSettings:
-        button_by_name = {
-            "Left": self._mouse_module.Button.left,
-            "Right": self._mouse_module.Button.right,
-            "Middle": self._mouse_module.Button.middle,
-        }
         with self._state_lock:
             target_title = self._target_title
         return ClickSettings(
             interval_ms=self._interval_ms.get(),
-            button=button_by_name[self._button_name.get()],
+            button_name=self._button_name.get(),
             lock_to_target=self._lock_enabled.get(),
             target_title=target_title,
         )
@@ -454,7 +456,12 @@ class RoClickApp(ctk.CTk):
 
             settings = self._current_settings()
             if self._target_allows_click(settings):
-                self._mouse_controller.click(settings.button)
+                try:
+                    self._clicker.click(settings.button_name)
+                except Exception:
+                    self._command_queue.put("click_error")
+                    self._active_event.clear()
+                    continue
 
             delay_seconds = settings.interval_ms / 1000
             end_time = time.monotonic() + delay_seconds

@@ -16,7 +16,7 @@ RoClick is intended for accessibility workflows, repetitive desktop tasks, inter
 - Global **1** start and **2** stop hotkeys
 - Global **F6** start/stop fallback hotkey
 - **Escape** emergency stop
-- 50-1000 ms click interval
+- 1-1000 ms click interval
 - Left, right, and middle click modes
 - Foreground-window capture
 - Optional target-window focus lock
@@ -27,6 +27,7 @@ RoClick is intended for accessibility workflows, repetitive desktop tasks, inter
 
 | Version | Windows EXE | SHA-256 |
 | --- | --- | --- |
+| v0.2.3 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.3/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.3/RoClick.sha256.txt) |
 | v0.2.2 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.2/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.2/RoClick.sha256.txt) |
 | v0.2.1 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.1/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.1/RoClick.sha256.txt) |
 | v0.2.0 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.0/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.0/RoClick.sha256.txt) |
