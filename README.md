@@ -11,6 +11,8 @@ RoClick is intended for accessibility workflows, repetitive desktop tasks, inter
 ## Features
 
 - Minimal iOS-style desktop interface
+- Frosted-glass inspired layered background
+- Original Roblox-inspired blocky visual assets, with no official Roblox artwork
 - Global **F6** start/stop hotkey
 - **Escape** emergency stop
 - 50-1000 ms click interval
@@ -24,6 +26,7 @@ RoClick is intended for accessibility workflows, repetitive desktop tasks, inter
 
 | Version | Windows EXE | SHA-256 |
 | --- | --- | --- |
+| v0.2.0 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.0/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.0/RoClick.sha256.txt) |
 | v0.1.0 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.1.0/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.1.0/RoClick.sha256.txt) |
 
 ## Run from source
@@ -70,9 +73,13 @@ Alternatively, open the repository's **Actions** tab, run **Build Windows EXE**,
 ```text
 RoClick/
 ├── .github/workflows/build-windows.yml
+├── assets/blocky-background.png
+├── assets/blocky-click-asset.png
 ├── assets/roclick.ico
+├── assets/roclick-logo.png
 ├── assets/roclick-logo.svg
 ├── docs/banner.png
+├── docs/window-mockup.png
 ├── src/roclick/
 │   ├── __init__.py
 │   ├── app.py
@@ -90,3 +97,7 @@ Use RoClick only on systems and applications you own or are authorized to automa
 ## License
 
 Released under the MIT License. See [LICENSE](LICENSE).
+
+## Window Mockup
+
+![RoClick Apple-style window mockup](docs/window-mockup.png)

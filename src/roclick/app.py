@@ -1,25 +1,36 @@
 from __future__ import annotations
 
 import queue
+import sys
 import threading
 import time
 import tkinter as tk
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import customtkinter as ctk
+from PIL import Image
 
 from .window_utils import get_foreground_window_title
 
 
-BACKGROUND = "#F2F2F7"
-CARD = "#FFFFFF"
+BACKGROUND = "#EEF7FF"
+GLASS = "#F8FBFF"
 BLUE = "#0A84FF"
 RED = "#FF453A"
 GREEN = "#30D158"
 TEXT = "#111111"
 SECONDARY = "#6E6E73"
-BORDER = "#E5E5EA"
+BORDER = "#FFFFFF"
+WINDOW_WIDTH = 480
+WINDOW_HEIGHT = 760
+
+
+def asset_path(name: str) -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / "assets" / name
+    return Path(__file__).resolve().parents[2] / "assets" / name
 
 
 @dataclass(frozen=True)
@@ -35,9 +46,11 @@ class RoClickApp(ctk.CTk):
         super().__init__()
 
         self.title("RoClick")
-        self.geometry("460x620")
-        self.minsize(420, 580)
+        self.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+        self.minsize(440, 700)
         self.configure(fg_color=BACKGROUND)
+        self._set_window_icon()
+        self._enable_soft_transparency()
 
         self._keyboard_module, self._mouse_module = self._load_input_modules()
         self._command_queue: queue.Queue[str] = queue.Queue()
@@ -53,6 +66,9 @@ class RoClickApp(ctk.CTk):
         self._helper_text = tk.StringVar(value="Ready. Press F6 to start.")
         self._target_text = tk.StringVar(value="No target selected")
         self._interval_text = tk.StringVar(value="100 ms")
+        self._background_image: ctk.CTkImage | None = None
+        self._logo_image: ctk.CTkImage | None = None
+        self._blocky_asset_image: ctk.CTkImage | None = None
 
         self._build_ui()
 
@@ -76,23 +92,28 @@ class RoClickApp(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
 
-        header = ctk.CTkFrame(self, fg_color="transparent")
-        header.grid(row=0, column=0, sticky="ew", padx=28, pady=(26, 16))
+        self._build_background()
+
+        header = ctk.CTkFrame(
+            self,
+            fg_color=GLASS,
+            corner_radius=24,
+            border_width=1,
+            border_color=BORDER,
+        )
+        header.grid(row=0, column=0, sticky="ew", padx=22, pady=(20, 14))
         header.grid_columnconfigure(1, weight=1)
 
-        logo = ctk.CTkFrame(header, width=58, height=58, fg_color=BLUE, corner_radius=18)
-        logo.grid(row=0, column=0, sticky="w")
-        logo.grid_propagate(False)
+        self._logo_image = self._load_ctk_image("roclick-logo.png", (58, 58))
         logo_label = ctk.CTkLabel(
-            logo,
-            text="R",
-            text_color="white",
-            font=ctk.CTkFont(size=30, weight="bold"),
+            header,
+            text="",
+            image=self._logo_image,
         )
-        logo_label.place(relx=0.5, rely=0.5, anchor="center")
+        logo_label.grid(row=0, column=0, sticky="w", padx=(18, 0), pady=16)
 
         title_stack = ctk.CTkFrame(header, fg_color="transparent")
-        title_stack.grid(row=0, column=1, sticky="ew", padx=(14, 0))
+        title_stack.grid(row=0, column=1, sticky="ew", padx=(14, 18), pady=16)
         ctk.CTkLabel(
             title_stack,
             text="RoClick",
@@ -108,7 +129,7 @@ class RoClickApp(ctk.CTk):
             anchor="w",
         ).grid(row=1, column=0, sticky="w", pady=(2, 0))
 
-        status_card = self._card(row=1, pady=(0, 16))
+        status_card = self._card(row=1, pady=(0, 14))
         status_card.grid_columnconfigure(0, weight=1)
 
         status_line = ctk.CTkFrame(status_card, fg_color="transparent")
@@ -151,7 +172,7 @@ class RoClickApp(ctk.CTk):
         )
         self._primary_button.grid(row=2, column=0, sticky="ew", padx=24, pady=(0, 24))
 
-        settings_card = self._card(row=2, pady=(0, 24))
+        settings_card = self._card(row=2, pady=(0, 22))
         settings_card.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
@@ -162,8 +183,16 @@ class RoClickApp(ctk.CTk):
             anchor="w",
         ).grid(row=0, column=0, sticky="ew", padx=24, pady=(22, 16))
 
+        self._blocky_asset_image = self._load_ctk_image("blocky-click-asset.png", (380, 112))
+        ctk.CTkLabel(
+            settings_card,
+            text="",
+            image=self._blocky_asset_image,
+            corner_radius=18,
+        ).grid(row=1, column=0, sticky="ew", padx=22, pady=(0, 18))
+
         interval_row = ctk.CTkFrame(settings_card, fg_color="transparent")
-        interval_row.grid(row=1, column=0, sticky="ew", padx=24)
+        interval_row.grid(row=2, column=0, sticky="ew", padx=24)
         interval_row.grid_columnconfigure(0, weight=1)
         ctk.CTkLabel(
             interval_row,
@@ -191,7 +220,7 @@ class RoClickApp(ctk.CTk):
             command=self._set_interval,
         )
         slider.set(self._interval_ms.get())
-        slider.grid(row=2, column=0, sticky="ew", padx=24, pady=(10, 22))
+        slider.grid(row=3, column=0, sticky="ew", padx=24, pady=(10, 20))
 
         ctk.CTkLabel(
             settings_card,
@@ -199,23 +228,23 @@ class RoClickApp(ctk.CTk):
             text_color=TEXT,
             font=ctk.CTkFont(size=15, weight="bold"),
             anchor="w",
-        ).grid(row=3, column=0, sticky="ew", padx=24)
+        ).grid(row=4, column=0, sticky="ew", padx=24)
         self._button_selector = ctk.CTkSegmentedButton(
             settings_card,
             values=["Left", "Right", "Middle"],
             variable=self._button_name,
-            selected_color=BLUE,
-            selected_hover_color="#006EDB",
-            unselected_color="#EFEFF4",
+            selected_color="#FFFFFF",
+            selected_hover_color="#F8FBFF",
+            unselected_color="#E9EEF5",
             unselected_hover_color="#E5E5EA",
             text_color=TEXT,
             text_color_disabled=SECONDARY,
             font=ctk.CTkFont(size=14, weight="bold"),
         )
-        self._button_selector.grid(row=4, column=0, sticky="ew", padx=24, pady=(10, 22))
+        self._button_selector.grid(row=5, column=0, sticky="ew", padx=24, pady=(10, 20))
 
         target_frame = ctk.CTkFrame(settings_card, fg_color="#F9F9FB", corner_radius=18)
-        target_frame.grid(row=5, column=0, sticky="ew", padx=24, pady=(0, 18))
+        target_frame.grid(row=6, column=0, sticky="ew", padx=24, pady=(0, 18))
         target_frame.grid_columnconfigure(0, weight=1)
         ctk.CTkLabel(
             target_frame,
@@ -253,7 +282,7 @@ class RoClickApp(ctk.CTk):
             text_color=TEXT,
             font=ctk.CTkFont(size=14, weight="bold"),
         )
-        lock_switch.grid(row=6, column=0, sticky="w", padx=24, pady=(0, 14))
+        lock_switch.grid(row=7, column=0, sticky="w", padx=24, pady=(0, 14))
 
         ctk.CTkLabel(
             settings_card,
@@ -262,18 +291,45 @@ class RoClickApp(ctk.CTk):
             font=ctk.CTkFont(size=12),
             anchor="w",
             wraplength=370,
-        ).grid(row=7, column=0, sticky="ew", padx=24, pady=(0, 22))
+        ).grid(row=8, column=0, sticky="ew", padx=24, pady=(0, 22))
 
     def _card(self, row: int, pady: tuple[int, int]) -> ctk.CTkFrame:
         card = ctk.CTkFrame(
             self,
-            fg_color=CARD,
+            fg_color=GLASS,
             corner_radius=22,
             border_width=1,
             border_color=BORDER,
         )
         card.grid(row=row, column=0, sticky="nsew", padx=24, pady=pady)
         return card
+
+    def _build_background(self) -> None:
+        self._background_image = self._load_ctk_image(
+            "blocky-background.png",
+            (WINDOW_WIDTH, WINDOW_HEIGHT),
+        )
+        background = ctk.CTkLabel(self, text="", image=self._background_image)
+        background.place(x=0, y=0, relwidth=1, relheight=1)
+        background.lower()
+
+    def _load_ctk_image(self, name: str, size: tuple[int, int]) -> ctk.CTkImage:
+        image = Image.open(asset_path(name))
+        return ctk.CTkImage(light_image=image, dark_image=image, size=size)
+
+    def _set_window_icon(self) -> None:
+        icon = asset_path("roclick.ico")
+        if icon.exists():
+            try:
+                self.iconbitmap(str(icon))
+            except tk.TclError:
+                pass
+
+    def _enable_soft_transparency(self) -> None:
+        try:
+            self.attributes("-alpha", 0.985)
+        except tk.TclError:
+            pass
 
     def _set_interval(self, value: float) -> None:
         interval = int(round(value / 5) * 5)
