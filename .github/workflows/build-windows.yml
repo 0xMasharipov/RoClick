@@ -1,0 +1,42 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller==6.10.0
+
+      - name: Build executable
+        run: .\build.ps1
+        shell: pwsh
+
+      - name: Calculate SHA-256
+        run: Get-FileHash dist\RoClick.exe -Algorithm SHA256 | Format-List | Out-File dist\RoClick.sha256.txt
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RoClick-Windows
+          path: |
+            dist/RoClick.exe
+            dist/RoClick.sha256.txt
