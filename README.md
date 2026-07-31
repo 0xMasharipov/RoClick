@@ -2,7 +2,7 @@
 
 RoClick is a lightweight Windows desktop auto-clicker with a clean, iOS-inspired interface. It repeatedly sends ordinary mouse clicks at a user-selected interval and can restrict clicking to one captured foreground window.
 
-![RoClick interface mockup](docs/roclick-mockup.png)
+![RoClick banner](docs/banner.png)
 
 ## What it is for
 
@@ -66,12 +66,11 @@ RoClick/
 ├── .github/workflows/build-windows.yml
 ├── assets/roclick.ico
 ├── assets/roclick-logo.svg
-├── docs/roclick-mockup.png
+├── docs/banner.png
 ├── src/roclick/
 │   ├── __init__.py
 │   ├── app.py
 │   └── window_utils.py
-├── AGENT_SPEC.md
 ├── build.ps1
 ├── README.md
 ├── requirements.txt
