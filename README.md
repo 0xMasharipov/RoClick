@@ -13,7 +13,8 @@ RoClick is intended for accessibility workflows, repetitive desktop tasks, inter
 - Minimal iOS-style desktop interface
 - Frosted-glass inspired layered background
 - Original Roblox-inspired blocky visual assets, with no official Roblox artwork
-- Global **F6** start/stop hotkey
+- Global **1** start and **2** stop hotkeys
+- Global **F6** start/stop fallback hotkey
 - **Escape** emergency stop
 - 50-1000 ms click interval
 - Left, right, and middle click modes
@@ -26,6 +27,7 @@ RoClick is intended for accessibility workflows, repetitive desktop tasks, inter
 
 | Version | Windows EXE | SHA-256 |
 | --- | --- | --- |
+| v0.2.2 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.2/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.2/RoClick.sha256.txt) |
 | v0.2.1 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.1/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.1/RoClick.sha256.txt) |
 | v0.2.0 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.0/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.0/RoClick.sha256.txt) |
 | v0.1.0 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.1.0/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.1.0/RoClick.sha256.txt) |
@@ -66,8 +68,8 @@ Alternatively, open the repository's **Actions** tab, run **Build Windows EXE**,
 3. Focus the application you are allowed to automate.
 4. Return to RoClick and select **Capture Active**, then focus the intended target before capture completes.
 5. Enable **Click only while target is active** when you want target-window protection.
-6. Press **F6** to start or stop.
-7. Press **Escape** at any time for an emergency stop.
+6. Press **1** to start.
+7. Press **2** or **Escape** to stop.
 
 ## Project structure
 

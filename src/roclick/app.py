@@ -63,7 +63,7 @@ class RoClickApp(ctk.CTk):
         self._button_name = tk.StringVar(value="Left")
         self._lock_enabled = tk.BooleanVar(value=False)
         self._status_text = tk.StringVar(value="Stopped")
-        self._helper_text = tk.StringVar(value="Ready. Press F6 to start.")
+        self._helper_text = tk.StringVar(value="Ready. Press 1 to start.")
         self._target_text = tk.StringVar(value="No target selected")
         self._interval_text = tk.StringVar(value="100 ms")
         self._background_image: ctk.CTkImage | None = None
@@ -81,6 +81,7 @@ class RoClickApp(ctk.CTk):
 
         self._keyboard_listener = self._keyboard_module.Listener(on_press=self._on_key_press)
         self._keyboard_listener.start()
+        self._bind_window_hotkeys()
 
         self.after(50, self._drain_command_queue)
         self.protocol("WM_DELETE_WINDOW", self._close)
@@ -161,7 +162,7 @@ class RoClickApp(ctk.CTk):
 
         self._primary_button = ctk.CTkButton(
             status_card,
-            text="Start",
+            text="Start (1)",
             height=52,
             corner_radius=18,
             fg_color=BLUE,
@@ -354,10 +355,30 @@ class RoClickApp(ctk.CTk):
         return keyboard, mouse
 
     def _on_key_press(self, key: Any) -> None:
-        if key == self._keyboard_module.Key.f6:
+        if self._key_matches_digit(key, "1"):
+            self._command_queue.put("start")
+        elif self._key_matches_digit(key, "2"):
+            self._command_queue.put("stop")
+        elif key == self._keyboard_module.Key.f6:
             self._command_queue.put("toggle")
         elif key == self._keyboard_module.Key.esc:
             self._command_queue.put("stop")
+
+    @staticmethod
+    def _key_matches_digit(key: Any, digit: str) -> bool:
+        if getattr(key, "char", None) == digit:
+            return True
+
+        vk_by_digit = {
+            "1": {49, 97},
+            "2": {50, 98},
+        }
+        return getattr(key, "vk", None) in vk_by_digit.get(digit, set())
+
+    def _bind_window_hotkeys(self) -> None:
+        self.bind_all("<KeyPress-1>", lambda _event: self.start_clicking())
+        self.bind_all("<KeyPress-2>", lambda _event: self.stop_clicking())
+        self.bind_all("<Escape>", lambda _event: self.stop_clicking())
 
     def _drain_command_queue(self) -> None:
         while True:
@@ -368,6 +389,8 @@ class RoClickApp(ctk.CTk):
 
             if command == "toggle":
                 self.toggle_active()
+            elif command == "start":
+                self.start_clicking()
             elif command == "stop":
                 self.stop_clicking()
 
@@ -381,18 +404,24 @@ class RoClickApp(ctk.CTk):
             self.start_clicking()
 
     def start_clicking(self) -> None:
+        settings = self._current_settings()
+        if settings.lock_to_target and not settings.target_title:
+            self.stop_clicking()
+            self._helper_text.set("Target lock is on. Capture a target first.")
+            return
+
         self._active_event.set()
         self._status_text.set("Active")
-        self._helper_text.set("Press F6 or Escape to stop.")
+        self._helper_text.set("Press 2 or Escape to stop.")
         self._status_dot.configure(fg_color=GREEN)
-        self._primary_button.configure(text="Stop", fg_color=RED, hover_color="#D9362E")
+        self._primary_button.configure(text="Stop (2)", fg_color=RED, hover_color="#D9362E")
 
     def stop_clicking(self) -> None:
         self._active_event.clear()
         self._status_text.set("Stopped")
-        self._helper_text.set("Ready. Press F6 to start.")
+        self._helper_text.set("Ready. Press 1 to start.")
         self._status_dot.configure(fg_color=SECONDARY)
-        self._primary_button.configure(text="Start", fg_color=BLUE, hover_color="#006EDB")
+        self._primary_button.configure(text="Start (1)", fg_color=BLUE, hover_color="#006EDB")
 
     def _current_settings(self) -> ClickSettings:
         button_by_name = {
