@@ -20,6 +20,12 @@ RoClick is intended for accessibility workflows, repetitive desktop tasks, inter
 - Local-only operation with no telemetry
 - Reproducible Windows EXE build through GitHub Actions
 
+## Downloads
+
+| Version | Windows EXE | SHA-256 |
+| --- | --- | --- |
+| v0.1.0 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.1.0/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.1.0/RoClick.sha256.txt) |
+
 ## Run from source
 
 ```bash
