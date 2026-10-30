@@ -16,7 +16,7 @@ The installed app works offline with its runtimes bundled. No Python or developm
 | --- | --- |
 | <img src="docs/screenshots/roclick-light.png" alt="Installed RoClick in light mode with click speed and mouse button controls" width="320"> | <img src="docs/screenshots/roclick-dark.png" alt="Installed RoClick in dark mode with click speed and mouse button controls" width="320"> |
 
-Actual installed-app captures from the [passing Windows installer run](https://github.com/0xMasharipov/RoClick/actions/runs/41142581287) on Windows Server 2022. The window scrolls to reveal more controls at the runner's available desktop size. Windows 10/11 acceptance remains pending.
+Actual installed-app captures from the [passing Windows installer run](https://github.com/0xMasharipov/RoClick/actions/runs/41144360233) on Windows Server 2022. The window scrolls to reveal more controls at the runner's available desktop size. Windows 10/11 acceptance remains pending.
 
 ## Use
 

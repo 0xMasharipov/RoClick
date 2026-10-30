@@ -9,7 +9,7 @@
 | Portable engine tests | Passed locally with GCC; simulated 60-second schedules, cancellation, configuration, partial failures, focus, destruction and capture |
 | TypeScript | Passed locally |
 | Release JS bundle | Passed locally with Metro (production Windows bundle and logo asset) |
-| Windows native build and installer | Passed on Windows Server 2022 in [run 41142581287](https://github.com/0xMasharipov/RoClick/actions/runs/41142581287), code commit `76ab42c` |
+| Windows native build and installer | Passed on Windows Server 2022 in [run 41144360233](https://github.com/0xMasharipov/RoClick/actions/runs/41144360233), code commit `b78324d` |
 | Installation / bundled launch / reinstall / uninstall | Passed in the same run; downloaded `smoke-install.json` confirms all four checks |
 | Clean Windows 10 and 11 without developer tools | Pending; a hosted build runner does not prove this |
 | Native light/dark screenshots | Captured in the same run, visually reviewed, and saved in [screenshots/](screenshots/); smoke test also verifies that opening Advanced does not produce an unedited press-duration validation message |
