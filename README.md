@@ -1,8 +1,22 @@
+![RoClick — On your desktop. Under your control.](docs/images/roclick-banner.png)
+
 # RoClick
 
-A local Windows auto-clicker with a React Native Windows desktop UI and a C++ input engine. Targets **x64 Windows 10 22H2 and Windows 11**. No Python, telemetry, automatic updates, or development server is required by the installed app.
+A local auto-clicker for **x64 Windows 10 22H2 and Windows 11**. Set your pace, capture a target window, and start or stop with a keyboard shortcut. A React Native Windows interface sits over a dedicated C++ input engine.
+
+The installed app works offline with its runtimes bundled. No Python or development server is required. No telemetry or automatic updates.
+
+[Get a candidate build](https://github.com/0xMasharipov/RoClick/actions/workflows/build-windows.yml) · [Screenshots](#screenshots) · [Build from source](#build-on-windows) · [Validation](docs/VALIDATION.md)
 
 **This migration is a release candidate, not a validated 1,000 clicks/sec release.** See [validation status](docs/VALIDATION.md). Published Python releases remain available below.
+
+## Screenshots
+
+| Light | Dark |
+| --- | --- |
+| <img src="docs/screenshots/roclick-light.png" alt="Installed RoClick in light mode with click speed and mouse button controls" width="320"> | <img src="docs/screenshots/roclick-dark.png" alt="Installed RoClick in dark mode with click speed and mouse button controls" width="320"> |
+
+Actual installed-app captures from the [passing Windows installer run](https://github.com/0xMasharipov/RoClick/actions/runs/41142581287) on Windows Server 2022. The window scrolls to reveal more controls at the runner's available desktop size. Windows 10/11 acceptance remains pending.
 
 ## Use
 
@@ -13,6 +27,19 @@ A local Windows auto-clicker with a React Native Windows desktop UI and a C++ in
 5. With target focus lock enabled (the default), clicking pauses when the captured window loses focus and resumes when it regains focus. Closing it stops the engine and requires recapture.
 
 The digit shortcuts pass through to the foreground app. Typing 1 in RoClick does not start clicking; 2, F6 and Escape remain global. Typing 2 into a field also stops clicking. The UI Start/Stop button is also available. Capture stops an active session. Settings apply on the native worker, releasing any current press before changing buttons or timing.
+
+| Control | Action |
+| --- | --- |
+| **1** / numpad **1** | Start outside RoClick |
+| **2** / numpad **2**, **Escape** | Stop globally |
+| **F6** | Toggle globally |
+| **Capture window** | Stop, then capture the window focused after two seconds |
+
+### Download a candidate build
+
+Open [Build Windows installer](https://github.com/0xMasharipov/RoClick/actions/workflows/build-windows.yml), select a successful run on `codex/native-windows-migration`, and download its **RoClick-Windows-x64** artifact (GitHub sign-in required). Extract the ZIP and run `RoClick-Setup.exe`. `SHA256SUMS.txt` contains checksums for the installer and the separate benchmark tool.
+
+The installer runs per user and bundles the production JavaScript, assets, and native runtimes. Older published Python executables are listed under [existing releases](#existing-published-releases).
 
 **Speed means complete down/up clicks successfully submitted by `SendInput`.** The measured rate is a rolling native measurement, updated at most four times per second. It does not measure whether another app received or processed input. Target applications may process fewer clicks. **1,000 clicks/sec is a measured performance target, not a real-time guarantee.**
 
@@ -50,7 +77,7 @@ The Windows build separately compiles/tests the Win32 runtime. Linux tests use v
 
 ## Design and architecture
 
-Compact, resizable single window with the original logo, rounded opaque controls, blue accents, system typography, keyboard focus visuals, accessible labels, system high-contrast colors, and a scrolling layout for small windows/display scaling. There are no decorative block images or motion effects. This is an **iOS-inspired Windows design**.
+Compact, resizable single window with a refreshed RoClick icon, rounded opaque controls, blue accents, system typography, keyboard focus visuals, accessible labels, system high-contrast colors, and a scrolling layout for small windows/display scaling. This is an **iOS-inspired Windows design**.
 
 Native DWM Desktop Acrylic is requested on supported Windows 11 builds. Windows 10, unsupported builds, disabled transparency, high contrast, and remote sessions use a solid backdrop. See [architecture and API references](docs/ARCHITECTURE.md).
 
@@ -62,9 +89,7 @@ Native DWM Desktop Acrylic is requested on supported Windows 11 builds. Windows 
 - `native/tests/`: virtual-time tests and independent-process local receiver benchmark.
 - `installer/`, `scripts/`, `.github/workflows/`: offline installer, validation, and artifact preparation.
 
-## Screenshots
-
-Reviewed captures of the **actual installed React Native UI**: [Light](docs/screenshots/roclick-light.png) · [Dark](docs/screenshots/roclick-dark.png). These come from the passing [Windows installer run](https://github.com/0xMasharipov/RoClick/actions/runs/41142581287) on Windows Server 2022. The small runner viewport shows the upper controls; the window scrolls to reveal the remaining controls. See [validation status](docs/VALIDATION.md) for outstanding Windows 10/11 acceptance.
+Brand assets: [vector app icon](assets/roclick-logo.svg) · [PNG app icon](assets/roclick-logo.png) · [Windows icon](assets/roclick.ico) · [banner source notes](docs/BRANDING.md).
 
 ## Existing published releases
 
