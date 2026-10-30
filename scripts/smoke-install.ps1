@@ -55,8 +55,14 @@ try {
       if (Find-Control 'Capture window') { break }
     }
   }
-  if (-not (Find-Control 'Capture window')) { throw 'React UI did not load from bundled JavaScript.' }
+  if (-not (Find-Control 'Capture window')) {
+    if ($app.MainWindowHandle -ne 0) { Screenshot 'startup-failure' }
+    throw 'React UI did not load from bundled JavaScript.'
+  }
   [CaptureWindow]::SetForegroundWindow($app.MainWindowHandle) | Out-Null
+  Click-Control 'Advanced settings +'
+  Click-Control 'Light'
+  Click-Control 'Advanced settings −'
   Screenshot 'roclick-light'
   Click-Control 'Advanced settings +'
   Click-Control 'Dark'

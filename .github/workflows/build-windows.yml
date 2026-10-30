@@ -39,12 +39,14 @@ jobs:
           $process = Start-Process $file -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw "Inno Setup installation failed: $($process.ExitCode)" }
       - name: Build native tests, release app and offline installer
+        id: build
         shell: pwsh
         run: ./build.ps1 -SkipInstall
       - name: Installer smoke test and screenshots
         shell: pwsh
         run: ./scripts/smoke-install.ps1
       - name: Upload prepared artifacts (no release publishing)
+        if: ${{ always() && steps.build.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: RoClick-Windows-x64
@@ -65,3 +67,4 @@ jobs:
             windows/RoClick/packages.lock.json
             build/native/Testing/Temporary/LastTest.log
             artifacts/*.log
+            artifacts/screenshots/*.png

@@ -20,7 +20,7 @@ struct CompReactPackageProvider
 };
 
 // The entry point of the Win32 application
-_Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR /* commandLine */, int showCmd) {
+static int RunApp() {
   // Initialize WinRT
   winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -75,10 +75,21 @@ _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR 
   appWindow.Title(L"RoClick");
   auto hwnd = winrt::Microsoft::UI::GetWindowFromWindowId(appWindow.Id());
   const auto dpi = static_cast<int>(GetDpiForWindow(hwnd));
-  appWindow.Resize({MulDiv(460, dpi, 96), MulDiv(820, dpi, 96)});
+  MONITORINFO monitor{sizeof(monitor)};
+  GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &monitor);
+  const auto workWidth = monitor.rcWork.right - monitor.rcWork.left;
+  const auto workHeight = monitor.rcWork.bottom - monitor.rcWork.top;
+  const auto width = std::min(MulDiv(460, dpi, 96), static_cast<int>(workWidth - 32));
+  const auto height = std::min(MulDiv(820, dpi, 96), static_cast<int>(workHeight - 32));
+  appWindow.MoveAndResize({monitor.rcWork.left + (workWidth - width) / 2,
+    monitor.rcWork.top + (workHeight - height) / 2, width, height});
   appWindow.SetIcon(std::wstring(appDirectory).append(L"\\RoClick.ico"));
   roclick::appearance::Install(hwnd);
-  roclick::Runtime::Shared();
+  auto &engine = roclick::Runtime::Shared();
+  struct EngineLifetime {
+    roclick::Runtime &engine;
+    ~EngineLifetime() { engine.Shutdown(); }
+  } lifetime{engine};
 
   // Get the ReactViewOptions so we can set the initial RN component to load
   auto viewOptions{reactNativeWin32App.ReactViewOptions()};
@@ -88,4 +99,15 @@ _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR 
   reactNativeWin32App.Start();
   roclick::Runtime::Shared().Shutdown();
   return 0;
+}
+
+_Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE, HINSTANCE, PSTR, int) {
+  try { return RunApp(); }
+  catch (winrt::hresult_error const &error) {
+    MessageBoxW(nullptr, error.message().c_str(), L"RoClick could not start — reinstall the complete app", MB_OK | MB_ICONERROR);
+  }
+  catch (std::exception const &) {
+    MessageBoxW(nullptr, L"The native engine could not start. Close RoClick and reinstall the complete app.", L"RoClick", MB_OK | MB_ICONERROR);
+  }
+  return 1;
 }

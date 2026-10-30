@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   Image, PanResponder, Pressable, ScrollView, StyleSheet, Switch, Text,
   TextInput, View, type StyleProp, type ViewStyle,
@@ -31,12 +31,14 @@ function SpeedSlider({interval, onChange, colors}: {interval: number; onChange: 
   const dragStart = useRef(0);
   const fraction = 1 - Math.log10(interval) / 3;
   const fromPosition = (x: number) => onChange(Math.max(1, Math.min(1000, Math.round(10 ** (3 * (1 - Math.max(0, Math.min(1, x / width))))))));
-  const responder = PanResponder.create({
+  const changeRef = useRef(fromPosition);
+  changeRef.current = fromPosition;
+  const responder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: event => { dragStart.current = event.nativeEvent.locationX; fromPosition(dragStart.current); },
-    onPanResponderMove: (_event, gesture) => fromPosition(dragStart.current + gesture.dx),
-  });
+    onPanResponderGrant: event => { dragStart.current = event.nativeEvent.locationX; changeRef.current(dragStart.current); },
+    onPanResponderMove: (_event, gesture) => changeRef.current(dragStart.current + gesture.dx),
+  }), []);
   return <View {...responder.panHandlers} accessible focusable accessibilityRole="adjustable"
     accessibilityLabel="Click speed" accessibilityHint="Use arrow keys to change the interval by one millisecond. Home is slowest; End is fastest."
     accessibilityValue={{min: 1, max: 1000, now: 1000 / interval, text: `${(1000 / interval).toFixed(1)} clicks per second, ${interval} milliseconds`}}
@@ -107,7 +109,6 @@ export default function App() {
     <View style={styles.header}>
       <Image source={require('../assets/roclick-logo.png')} style={styles.logo} accessible={false} />
       <Text style={[styles.brand, {color: outsideText}]}>RoClick</Text>
-      <Text style={[styles.local, {color: outsideSecondary}]}>On your desktop. Under your control.</Text>
     </View>
 
     <View style={[styles.panel, {backgroundColor: colors.panel, borderColor: colors.line}]}>
@@ -155,13 +156,14 @@ export default function App() {
       </View>
       <View style={[styles.target, {borderColor: colors.line}]}>
         <Text style={[styles.label, {color: colors.text}]}>Target window</Text>
-        <Text selectable numberOfLines={2} style={[styles.targetTitle, {color: colors.text}]}>{capturing ? 'Switch windows. Capturing in 2 seconds…' : state?.targetTitle || 'No window captured'}</Text>
-        <Text style={[styles.small, {color: colors.secondary}]}>{state?.targetPid ? `Process ${state.targetPid} · ${config.lockToTarget ? 'pauses when unfocused' : 'focus lock off'}` : 'Capture a window to keep clicks in the right place.'}</Text>
-        <View style={[styles.row, styles.captureRow]}>
-          <Action label={capturing ? 'Cancel capture' : state?.targetPid ? 'Recapture window' : 'Capture window'} colors={colors}
-            onPress={() => capturing ? Engine.stop() : Engine.captureTarget(2000)} style={styles.grow} />
-          {!!state?.targetPid && <Action label="Clear" colors={colors} onPress={() => Engine.clearTarget()} />}
+        <View style={[styles.row, styles.captureRow]}><View style={styles.grow}>
+          <Text selectable numberOfLines={2} style={[styles.targetTitle, {color: colors.text}]}>{capturing ? 'Switch windows now…' : state?.targetTitle || 'No window captured'}</Text>
+          <Text style={[styles.small, {color: colors.secondary}]}>{state?.targetPid ? `Process ${state.targetPid}` : 'Capture in 2 seconds'}</Text>
         </View>
+          <Action label={capturing ? 'Cancel capture' : state?.targetPid ? 'Recapture window' : 'Capture window'} colors={colors}
+            onPress={() => capturing ? Engine.stop() : Engine.captureTarget(2000)} />
+        </View>
+        {!!state?.targetPid && <Text style={[styles.hint, {color: colors.secondary}]}>{config.lockToTarget ? 'Pauses when the target loses focus.' : 'Focus lock is off.'}</Text>}
       </View>
       <Action label={advanced ? 'Advanced settings −' : 'Advanced settings +'} expanded={advanced} colors={colors}
         onPress={() => setAdvanced(!advanced)} style={styles.advancedButton} />
@@ -179,6 +181,7 @@ export default function App() {
           <Text style={[styles.grow, {color: colors.text}]}>Only click while target is focused</Text>
           <Switch accessibilityLabel="Only click while target is focused" value={config.lockToTarget} onValueChange={lockToTarget => update({lockToTarget})} />
         </View>
+        {!!state?.targetPid && <Action label="Clear captured window" colors={colors} onPress={() => Engine.clearTarget()} style={styles.sectionGap} />}
         <Text style={[styles.label, styles.sectionGap, {color: colors.text}]}>Appearance</Text>
         <View style={styles.segments}>{(['system', 'light', 'dark'] as const).map(t => <Action key={t} colors={colors}
           label={t[0].toUpperCase() + t.slice(1)} selected={t === theme} style={styles.grow}
@@ -186,19 +189,18 @@ export default function App() {
         <Text style={[styles.hint, {color: colors.secondary}]}>{state?.highResolution ? 'High-resolution timer' : 'Standard timer fallback'} · {state?.acrylic ? 'Native Acrylic' : 'Solid backdrop'}</Text>
         <Text style={[styles.hint, {color: colors.secondary}]}>{state?.skipped ?? 0} deadlines skipped · {state?.failures ?? 0} errors</Text>
         <Text style={[styles.hint, {color: colors.secondary}]}>1 starts only outside RoClick. 2, Escape and F6 work everywhere. Typing 2 also stops clicking.</Text>
+        <Text style={[styles.hint, {color: colors.secondary}]}>1,000 clicks/sec is a performance target, not a real-time guarantee.</Text>
       </View>}
     </View>
     <Text style={[styles.footer, {color: outsideSecondary}]}>Local only · No telemetry · No automatic updates</Text>
-    <Text style={[styles.small, styles.footerNote, {color: outsideSecondary}]}>1,000 clicks/sec is a performance target, not a real-time guarantee.</Text>
   </ScrollView>;
 }
 
 const styles = StyleSheet.create({
-  content: {padding: 24, gap: 16, width: '100%', maxWidth: 640, alignSelf: 'center'},
+  content: {padding: 20, gap: 14, width: '100%', maxWidth: 640, alignSelf: 'center'},
   header: {flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingBottom: 2},
   logo: {width: 30, height: 30, resizeMode: 'contain'}, brand: {fontSize: 20, fontWeight: '700'},
-  local: {fontSize: 12, flexBasis: '100%'},
-  panel: {borderRadius: 22, borderWidth: 1, padding: 20},
+  panel: {borderRadius: 22, borderWidth: 1, padding: 18},
   status: {fontSize: 19, fontWeight: '600'}, hint: {fontSize: 12, lineHeight: 18, marginTop: 5},
   label: {fontSize: 14, fontWeight: '600'}, small: {fontSize: 12, lineHeight: 18},
   action: {minHeight: 40, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, justifyContent: 'center', alignItems: 'center'},
@@ -214,8 +216,8 @@ const styles = StyleSheet.create({
   thumb: {position: 'absolute', top: 6, width: 26, height: 26, borderRadius: 13, borderWidth: 3},
   sliderLabels: {justifyContent: 'space-between'}, sectionGap: {marginTop: 20},
   segments: {flexDirection: 'row', gap: 6, marginTop: 10},
-  target: {borderTopWidth: 1, paddingTop: 20, marginTop: 22}, targetTitle: {fontSize: 14, marginTop: 8, marginBottom: 3},
-  captureRow: {marginTop: 14}, advancedButton: {marginTop: 20}, advanced: {marginTop: 18},
+  target: {borderTopWidth: 1, paddingTop: 16, marginTop: 18}, targetTitle: {fontSize: 14, marginBottom: 3},
+  captureRow: {marginTop: 10}, advancedButton: {marginTop: 16}, advanced: {marginTop: 18},
   validation: {fontSize: 12, marginTop: 10}, error: {borderWidth: 1, padding: 16, borderRadius: 14},
-  footer: {fontSize: 11, textAlign: 'center'}, footerNote: {textAlign: 'center', marginTop: -7},
+  footer: {fontSize: 11, textAlign: 'center'},
 });

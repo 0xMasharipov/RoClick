@@ -38,9 +38,11 @@ try {
   Copy-Item 'assets/roclick.ico' $stage
   Copy-Item 'LICENSE' $stage
   # App-local MSVC runtime: offline install, no runtime download or UAC needed.
-  $redist = Get-ChildItem (Join-Path $vs 'VC\Redist\MSVC') -Directory | Sort-Object Name -Descending | Select-Object -First 1
-  $crt = Join-Path $redist.FullName 'x64\Microsoft.VC143.CRT'
-  if (-not (Test-Path $crt)) { throw 'MSVC x64 redistributable files are missing.' }
+  $runtime = Get-ChildItem (Join-Path $vs 'VC\Redist\MSVC') -Recurse -File -Filter 'vcruntime140.dll' |
+    Where-Object { $_.FullName -match '\\x64\\Microsoft\.VC[^\\]+\.CRT\\' } |
+    Sort-Object { $_.VersionInfo.FileVersionRaw } -Descending | Select-Object -First 1
+  if (-not $runtime) { throw 'MSVC x64 redistributable files are missing.' }
+  $crt = $runtime.DirectoryName
   Copy-Item "$crt\*.dll" $stage -Force
   foreach ($required in @('RoClick.exe','Microsoft.ReactNative.dll','Microsoft.UI.Xaml.dll','vcruntime140.dll','msvcp140.dll','Bundle/index.windows.bundle')) {
     if (-not (Test-Path (Join-Path $stage $required))) { throw "Incomplete runtime payload: $required" }

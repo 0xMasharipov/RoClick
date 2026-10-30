@@ -41,7 +41,8 @@ static LRESULT CALLBACK Subclass(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp, UINT
     return 0;
   }
   // Stop before RN's unload waits on JavaScript, including a busy JS thread.
-  if (msg == WM_CLOSE || msg == WM_ENDSESSION) Runtime::Shared().Stop();
+  if (msg == WM_CLOSE || msg == WM_QUERYENDSESSION) Runtime::Shared().Stop();
+  if (msg == WM_ENDSESSION && wp) Runtime::Shared().Shutdown();
   if (msg == WM_NCDESTROY) { window = nullptr; RemoveWindowSubclass(hwnd, Subclass, 1); }
   return DefSubclassProc(hwnd, msg, wp, lp);
 }
