@@ -9,10 +9,12 @@
 | Portable engine tests | Passed locally with GCC; simulated 60-second schedules, cancellation, configuration, partial failures, focus, destruction and capture |
 | TypeScript | Passed locally |
 | Release JS bundle | Passed locally with Metro (production Windows bundle and logo asset) |
-| Windows native build and installer | GitHub Actions run pending |
-| Installation / bundled launch / reinstall / uninstall | Automated smoke script prepared; runner evidence pending |
+| Windows native build and installer | Passed on Windows Server 2022 in [run 41142581287](https://github.com/0xMasharipov/RoClick/actions/runs/41142581287), code commit `76ab42c` |
+| Installation / bundled launch / reinstall / uninstall | Passed in the same run; downloaded `smoke-install.json` confirms all four checks |
 | Clean Windows 10 and 11 without developer tools | Pending; a hosted build runner does not prove this |
-| Native light/dark screenshots | Captured by Windows smoke test after installed UI passes accessibility-tree checks |
+| Native light/dark screenshots | Captured in the same run, visually reviewed, and saved in [screenshots/](screenshots/); smoke test also verifies that opening Advanced does not produce an unedited press-duration validation message |
+
+Downloaded installer and benchmark SHA-256 checksums both match `dist/SHA256SUMS.txt` from this run. The reviewed screenshots show the top of the scrollable window at the runner's available desktop size.
 
 ## Performance protocol
 

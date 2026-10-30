@@ -64,7 +64,7 @@ Native DWM Desktop Acrylic is requested on supported Windows 11 builds. Windows 
 
 ## Screenshots
 
-The Windows smoke test captures the **actual installed React Native UI** in light and dark modes into the build artifact's `screenshots/` directory. Screenshots from the former Tkinter UI are not presented as the new interface. Verified captures will be added to `docs/screenshots/` after the Windows run passes; see [validation status](docs/VALIDATION.md).
+Reviewed captures of the **actual installed React Native UI**: [Light](docs/screenshots/roclick-light.png) · [Dark](docs/screenshots/roclick-dark.png). These come from the passing [Windows installer run](https://github.com/0xMasharipov/RoClick/actions/runs/41142581287) on Windows Server 2022. The small runner viewport shows the upper controls; the window scrolls to reveal the remaining controls. See [validation status](docs/VALIDATION.md) for outstanding Windows 10/11 acceptance.
 
 ## Existing published releases
 
