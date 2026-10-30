@@ -62,9 +62,12 @@ void Runtime::Toggle() { Enqueue({Op::Toggle}); }
 void Runtime::CaptureAfter(int delay) { Enqueue({Op::Capture, {}, delay}); }
 void Runtime::Clear() { Enqueue({Op::Clear}); }
 void Runtime::Stop() {
-  // Stop outranks queued starts/configuration and interrupts a press wait.
+  // Stop outranks queued actions and interrupts a press wait. Preserve the
+  // latest configuration so visible edits are not silently lost on Stop.
   std::lock_guard lock(commandsMutex_);
-  commands_.clear();
+  for (auto it = commands_.begin(); it != commands_.end();) {
+    if (it->op != Op::Configure) it = commands_.erase(it); else ++it;
+  }
   stopAt_ = Clock();
   stopRequested_ = true;
   SetEvent(wake_);
@@ -121,7 +124,7 @@ void Runtime::Work() {
 void Runtime::Publish() {
   const auto now = Clock();
   const auto &s = engine_.Get();
-  if (s.clicks < rateClicks_ || s.started > rateAt_) { rateAt_ = now; rateClicks_ = s.clicks; rate_ = 0; }
+  if (s.clicks < rateClicks_ || s.started > rateAt_) { rateAt_ = s.started; rateClicks_ = 0; rate_ = 0; }
   if (now - rateAt_ >= 250 * Millisecond) {
     rate_ = double(s.clicks - rateClicks_) * 1'000'000'000.0 / double(now - rateAt_);
     rateClicks_ = s.clicks; rateAt_ = now;
@@ -205,9 +208,9 @@ LRESULT CALLBACK Runtime::Keyboard(int code, WPARAM message, LPARAM data) {
       if (first) {
         DWORD pid = 0; GetWindowThreadProcessId(GetForegroundWindow(), &pid);
         const bool editing = pid == GetCurrentProcessId();
-        // Digits remain ordinary editable keys in RoClick. They pass through
-        // everywhere; Escape and F6 remain global, including our own window.
-        if (vk == VK_ESCAPE || (!editing && (vk == '2' || vk == VK_NUMPAD2))) self->Stop();
+        // Keys pass through. Never start from a digit typed into RoClick;
+        // stop keys remain global even while editing a field in our window.
+        if (vk == VK_ESCAPE || vk == '2' || vk == VK_NUMPAD2) self->Stop();
         else if (vk == VK_F6) self->Toggle();
         else if (!editing && (vk == '1' || vk == VK_NUMPAD1)) self->Start();
       }

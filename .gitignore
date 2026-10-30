@@ -13,7 +13,6 @@ dist/
 node_modules/
 windows/**/Bundle/
 windows/**/Generated Files/
-windows/**/packages.lock.json
 windows/packages/
 windows/x64/
 windows/Debug/

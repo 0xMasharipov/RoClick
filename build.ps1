@@ -19,8 +19,9 @@ try {
   $msbuild = Join-Path $vs 'MSBuild\Current\Bin\MSBuild.exe'
   $solutionDir = (Resolve-Path 'windows').Path + '\'
   $output = Join-Path $PSScriptRoot 'build\app\'
-  # Build the unpackaged desktop project, with an offline JS bundle.
-  Invoke-Checked $msbuild @('windows/RoClick/RoClick.vcxproj','/restore','/m',
+  # The solution contains only the unpackaged desktop project. RNW's targets
+  # require solution metadata even when there is just one app project.
+  Invoke-Checked $msbuild @('windows/RoClick.sln','/restore','/m',
     '/p:Configuration=Release','/p:Platform=x64',"/p:SolutionDir=$solutionDir",
     '/p:UseBundle=true','/p:WindowsPackageType=None','/p:WindowsAppSDKSelfContained=true',
     "/p:OutDir=$output", '/bl:build/windows.binlog')
@@ -48,9 +49,10 @@ try {
   if (-not (Test-Path $iscc)) { throw 'Install Inno Setup 6 before building the installer.' }
   $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
   Invoke-Checked $iscc @("/DAppVersion=$version", "/DSourceDir=$stage", 'installer/RoClick.iss')
-  $file = Get-Item 'dist/RoClick-Setup.exe'
-  $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
-  "$hash  RoClick-Setup.exe" | Set-Content 'dist/SHA256SUMS.txt' -Encoding ascii
   Copy-Item 'build/native/Release/roclick_benchmark.exe' 'dist/'
+  @('RoClick-Setup.exe','roclick_benchmark.exe') | ForEach-Object {
+    $hash = (Get-FileHash (Join-Path 'dist' $_) -Algorithm SHA256).Hash.ToLowerInvariant()
+    "$hash  $_"
+  } | Set-Content 'dist/SHA256SUMS.txt' -Encoding ascii
   Write-Host 'Prepared dist/RoClick-Setup.exe and SHA256SUMS.txt. Nothing has been published.'
 } finally { Pop-Location }

@@ -24,6 +24,10 @@ jobs:
         with:
           node-version: '22.14.0'
           cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: windows-rnw-0.80.6-${{ hashFiles('windows/**/packages.lock.json') }}
       - name: Install pinned dependencies
         run: npm ci --no-audit --no-fund
       - name: Install Inno Setup
@@ -58,5 +62,6 @@ jobs:
           name: RoClick-build-diagnostics
           path: |
             build/windows.binlog
+            windows/RoClick/packages.lock.json
             build/native/Testing/Temporary/LastTest.log
             artifacts/*.log

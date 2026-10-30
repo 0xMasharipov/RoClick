@@ -78,6 +78,8 @@ export default function App() {
     secondary: state.buttonTextColor, line: state.buttonTextColor,
     blue: state.highlightColor, onBlue: state.highlightTextColor, danger: state.buttonTextColor,
   } : (state?.dark ?? theme === 'dark') ? dark : light;
+  const outsideText = state?.highContrast ? state.textColor : colors.text;
+  const outsideSecondary = state?.highContrast ? state.textColor : colors.secondary;
   const active = state?.state === 'running' || state?.state === 'paused';
   const capturing = state?.state === 'capturing';
   const update = (patch: Partial<ClickConfig>) => {
@@ -104,8 +106,8 @@ export default function App() {
     contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
     <View style={styles.header}>
       <Image source={require('../assets/roclick-logo.png')} style={styles.logo} accessible={false} />
-      <Text style={[styles.brand, {color: colors.text}]}>RoClick</Text>
-      <Text style={[styles.local, {color: colors.secondary}]}>On your desktop. Under your control.</Text>
+      <Text style={[styles.brand, {color: outsideText}]}>RoClick</Text>
+      <Text style={[styles.local, {color: outsideSecondary}]}>On your desktop. Under your control.</Text>
     </View>
 
     <View style={[styles.panel, {backgroundColor: colors.panel, borderColor: colors.line}]}>
@@ -182,12 +184,12 @@ export default function App() {
           label={t[0].toUpperCase() + t.slice(1)} selected={t === theme} style={styles.grow}
           onPress={() => { setTheme(t); Engine.setTheme(t); }} />)}</View>
         <Text style={[styles.hint, {color: colors.secondary}]}>{state?.highResolution ? 'High-resolution timer' : 'Standard timer fallback'} · {state?.acrylic ? 'Native Acrylic' : 'Solid backdrop'}</Text>
-        <Text style={[styles.hint, {color: colors.secondary}]}>{state?.skipped ?? 0} deadlines skipped · {state?.failures ?? 0} input failures</Text>
-        <Text style={[styles.hint, {color: colors.secondary}]}>Digit shortcuts work outside RoClick so you can type values here. Escape and F6 work everywhere.</Text>
+        <Text style={[styles.hint, {color: colors.secondary}]}>{state?.skipped ?? 0} deadlines skipped · {state?.failures ?? 0} errors</Text>
+        <Text style={[styles.hint, {color: colors.secondary}]}>1 starts only outside RoClick. 2, Escape and F6 work everywhere. Typing 2 also stops clicking.</Text>
       </View>}
     </View>
-    <Text style={[styles.footer, {color: colors.secondary}]}>Local only · No telemetry · No automatic updates</Text>
-    <Text style={[styles.small, styles.footerNote, {color: colors.secondary}]}>1,000 clicks/sec is a performance target, not a real-time guarantee.</Text>
+    <Text style={[styles.footer, {color: outsideSecondary}]}>Local only · No telemetry · No automatic updates</Text>
+    <Text style={[styles.small, styles.footerNote, {color: outsideSecondary}]}>1,000 clicks/sec is a performance target, not a real-time guarantee.</Text>
   </ScrollView>;
 }
 

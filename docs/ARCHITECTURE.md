@@ -4,7 +4,7 @@ The installed app is an unpackaged x64 Win32 process hosting RN Windows Fabric/H
 
 ## Scheduling and submission
 
-One worker owns `Engine`, its configuration and the target process handle. Commands cross a bounded/coalescing queue. Stop clears queued commands and signals the worker's wait event. Keyboard hooks run on a separate native message thread; repeated key-downs are ignored. Keys are never swallowed or logged. No hook or scheduler callback invokes JavaScript.
+One worker owns `Engine`, its configuration and the target process handle. Commands cross a bounded/coalescing queue. Stop clears queued actions (preserving the latest configuration) and signals the worker's wait event. Keyboard hooks run on a separate native message thread; repeated key-downs are ignored. Keys are never swallowed or logged. No hook or scheduler callback invokes JavaScript.
 
 Time is `QueryPerformanceCounter`, converted to monotonic nanoseconds. Each interval has an absolute monotonic deadline. A one-shot high-resolution waitable timer supplies an interruptible relative wait; a separate event cancels that wait. A standard waitable timer is used if the high-resolution creation fails, and the UI reports that fallback. Windows scheduling is not real time.
 
