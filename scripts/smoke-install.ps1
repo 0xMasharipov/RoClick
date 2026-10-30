@@ -42,11 +42,12 @@ function Click-Control([string]$name) {
   Start-Sleep -Milliseconds 500
 }
 function Screenshot([string]$name) {
-  $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::IsScrollPatternAvailableProperty, $true)
-  $scroller = $script:element.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
-  if ($scroller) {
-    $scroll = $scroller.GetCurrentPattern([System.Windows.Automation.ScrollPattern]::Pattern)
-    $scroll.SetScrollPercent([System.Windows.Automation.ScrollPattern]::NoScroll, 0)
+  # RNW 0.80's SetScrollPercent returns success without scrolling. Use the
+  # implemented ScrollItem action on the header instead.
+  $header = Find-Control 'RoClick'
+  if ($header) {
+    $scroll = $header.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern)
+    $scroll.ScrollIntoView()
     Start-Sleep -Milliseconds 500
   }
   $rect = [CaptureWindow+Rect]::new()
