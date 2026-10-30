@@ -18,6 +18,7 @@ function Action({label, onPress, colors, primary, disabled, style, selected, exp
   const [focused, setFocused] = useState(false);
   return <Pressable accessibilityRole="button" accessibilityLabel={label}
     accessibilityState={{disabled, selected, expanded}} disabled={disabled}
+    onAccessibilityTap={disabled ? undefined : onPress}
     onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onPress={onPress}
     style={({pressed}) => [styles.action, {backgroundColor: primary ? colors.blue : colors.panel,
       borderColor: focused ? colors.text : selected ? colors.blue : colors.line,

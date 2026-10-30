@@ -29,6 +29,14 @@ function Find-Control([string]$name) {
 function Click-Control([string]$name) {
   $control = Find-Control $name
   if (-not $control) { throw "Missing UI control: $name" }
+  if (-not $control.Current.IsEnabled) { throw "UI control is disabled: $name" }
+  if ($control.Current.IsOffscreen) {
+    $scroll = $control.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern)
+    $scroll.ScrollIntoView()
+  }
+  if (-not $control.GetCurrentPropertyValue([System.Windows.Automation.AutomationElement]::IsInvokePatternAvailableProperty)) {
+    throw "UI control does not expose the accessible Invoke action: $name"
+  }
   $pattern = $control.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
   $pattern.Invoke()
   Start-Sleep -Milliseconds 500
