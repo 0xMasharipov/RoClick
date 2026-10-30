@@ -134,10 +134,7 @@ try {
   if (-not (Find-Control 'engine-error')) { throw 'Expected a native capture error.' }
   Click-Control 'language-tr'
   Assert-Name 'engine-status' 'Durduruldu · işlem gerekiyor'
-  $errorText = (Find-Control 'engine-error').FindFirst([System.Windows.Automation.TreeScope]::Descendants,
-    [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,
-    'Bu pencere seçilemedi. Başka bir masaüstü uygulamasına geçip yeniden seç.'))
-  if (-not $errorText) { throw 'Native error was not translated to Turkish.' }
+  Assert-Name 'engine-error' 'Bu pencere seçilemedi. Başka bir masaüstü uygulamasına geçip yeniden seç.'
   Click-Control 'capture'
   Click-Control 'primary-action'
   # Capture an independent window, then Start while RoClick is foreground:

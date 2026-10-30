@@ -177,8 +177,8 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
         {!!state?.targetPid && <Text style={[styles.hint, {color: colors.secondary}]}>{t(config.lockToTarget ? 'focusPause' : 'focusOff')}</Text>}
       </View>
     </View>
-    {!!state?.error && <View testID="engine-error" accessibilityRole="alert" style={[styles.error, {backgroundColor: colors.panel, borderColor: colors.danger}]}>
-      <Text selectable style={{color: colors.danger}}>{t(errorKey)}{state.errorCode ? ` (${t('windowsCode', {code: state.errorCode})})` : ''}</Text>
+    {!!state?.error && <View style={[styles.error, {backgroundColor: colors.panel, borderColor: colors.danger}]}>
+      <Text testID="engine-error" accessibilityRole="alert" accessibilityLiveRegion="assertive" selectable style={{color: colors.danger}}>{t(errorKey)}{state.errorCode ? ` (${t('windowsCode', {code: state.errorCode})})` : ''}</Text>
     </View>}
     <View style={panel}>
       <View style={styles.row}>
