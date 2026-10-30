@@ -1,0 +1,5 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {"strict": true, "types": ["react"], "paths": {"react-native": ["./node_modules/react-native-windows"]}},
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

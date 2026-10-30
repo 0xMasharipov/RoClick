@@ -1,0 +1,37 @@
+{
+  "name": "roclick",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "windows": "react-native run-windows --arch x64 --no-telemetry",
+    "typecheck": "tsc --noEmit",
+    "bundle:windows": "react-native bundle --platform windows --dev false --entry-file index.js --bundle-output windows/RoClick/Bundle/index.windows.bundle --assets-dest windows/RoClick/Bundle",
+    "test:native": "cmake -S native -B build/native && cmake --build build/native && ctest --test-dir build/native --output-on-failure"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-native": "0.80.2",
+    "react-native-windows": "0.80.6"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "19.1.1",
+    "@react-native-community/cli-platform-android": "19.1.1",
+    "@react-native-community/cli-platform-ios": "19.1.1",
+    "@react-native/babel-preset": "0.80.2",
+    "@react-native/metro-config": "0.80.2",
+    "@react-native/typescript-config": "0.80.2",
+    "@types/react": "19.1.0",
+    "typescript": "5.8.3"
+  },
+  "engines": {
+    "node": ">=22.14.0 <23"
+  },
+  "react-native-windows": {
+    "init-windows": {
+      "name": "RoClick",
+      "namespace": "RoClick",
+      "template": "cpp-app"
+    }
+  }
+}

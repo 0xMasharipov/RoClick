@@ -9,3 +9,14 @@ dist/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+node_modules/
+windows/**/Bundle/
+windows/**/Generated Files/
+windows/packages/
+windows/x64/
+windows/Debug/
+windows/Release/
+*.binlog
+.vs/
+artifacts/
