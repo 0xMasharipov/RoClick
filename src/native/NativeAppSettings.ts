@@ -1,0 +1,7 @@
+import {TurboModuleRegistry, type TurboModule} from 'react-native';
+export type Locale = 'en' | 'tr';
+export interface Spec extends TurboModule {
+  getLanguage(): Promise<Locale>;
+  setLanguage(language: Locale): Promise<void>;
+}
+export default TurboModuleRegistry.getEnforcing<Spec>('AppSettings');

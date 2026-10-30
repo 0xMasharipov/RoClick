@@ -10,6 +10,7 @@ try {
   }
   if (-not $SkipInstall) { Invoke-Checked 'npm.cmd' @('ci', '--no-audit', '--no-fund') }
   Invoke-Checked 'npm.cmd' @('run', 'typecheck')
+  Invoke-Checked 'npm.cmd' @('run', 'test:localization')
   Invoke-Checked 'cmake.exe' @('-S','native','-B','build/native','-A','x64')
   Invoke-Checked 'cmake.exe' @('--build','build/native','--config','Release')
   Invoke-Checked 'ctest.exe' @('--test-dir','build/native','-C','Release','--output-on-failure')

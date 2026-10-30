@@ -9,7 +9,7 @@ export type EngineState = {
   config: ClickConfig;
   targetTitle: string; targetPid: number;
   submittedClicks: number; submittedEvents: number; submittedRate: number;
-  skipped: number; failures: number; error: string; errorCode: number; held: boolean;
+  skipped: number; failures: number; error: string; errorCode: number; errorKey: '' | 'invalidConfig' | 'targetClosed' | 'captureFailed' | 'inputRejected' | 'releaseRejected' | 'targetMissing' | 'monitoringUnavailable' | 'timerUnavailable' | 'schedulerWaitFailed'; held: boolean;
   highResolution: boolean; acrylic: boolean; dark: boolean; highContrast: boolean;
   windowColor: string; textColor: string; buttonColor: string; buttonTextColor: string;
   highlightColor: string; highlightTextColor: string;

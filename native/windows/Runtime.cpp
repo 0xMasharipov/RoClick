@@ -90,17 +90,17 @@ void Runtime::Work() {
         case Op::Configure: engine_.Configure(c.config); break;
         case Op::Start:
           if (monitoring_) engine_.Start();
-          else engine_.ExternalFailure("Native input monitoring is unavailable. Restart RoClick on the interactive desktop.");
+          else engine_.ExternalFailure(ErrorKind::MonitoringUnavailable, "Native input monitoring is unavailable. Restart RoClick on the interactive desktop.");
           break;
         case Op::Stop: engine_.Stop(); break;
         case Op::Toggle:
           if (engine_.Active()) engine_.Stop();
           else if (monitoring_) engine_.Start();
-          else engine_.ExternalFailure("Native input monitoring is unavailable. Restart RoClick on the interactive desktop.");
+          else engine_.ExternalFailure(ErrorKind::MonitoringUnavailable, "Native input monitoring is unavailable. Restart RoClick on the interactive desktop.");
           break;
         case Op::Capture: engine_.CaptureAfter(c.delay); break;
         case Op::Clear: engine_.ClearTarget(); break;
-        case Op::Error: engine_.ExternalFailure("Native keyboard/window monitoring could not start. Restart RoClick on the interactive desktop."); break;
+        case Op::Error: engine_.ExternalFailure(ErrorKind::MonitoringUnavailable, "Native keyboard/window monitoring could not start. Restart RoClick on the interactive desktop."); break;
       }
     }
     if (!stopRequested_ && !shutdown_) engine_.Tick();
@@ -108,12 +108,12 @@ void Runtime::Work() {
     const auto remaining = std::max<Time>(100, engine_.NextWake() - Clock());
     LARGE_INTEGER due{}; due.QuadPart = -((remaining + 99) / 100);
     if (!SetWaitableTimerEx(timer_, &due, 0, nullptr, nullptr, nullptr, 0)) {
-      engine_.ExternalFailure("Windows could not arm the scheduler timer. Restart RoClick.", GetLastError());
+      engine_.ExternalFailure(ErrorKind::TimerUnavailable, "Windows could not arm the scheduler timer. Restart RoClick.", GetLastError());
       Publish(); WaitForSingleObject(wake_, 100); continue;
     }
     HANDLE handles[] = {wake_, timer_};
     if (WaitForMultipleObjects(2, handles, FALSE, INFINITE) == WAIT_FAILED) {
-      engine_.ExternalFailure("Windows scheduler wait failed. Restart RoClick.", GetLastError());
+      engine_.ExternalFailure(ErrorKind::SchedulerWaitFailed, "Windows scheduler wait failed. Restart RoClick.", GetLastError());
       Publish(); WaitForSingleObject(wake_, 100);
     }
   }
@@ -150,7 +150,7 @@ bool Runtime::Capture() {
   }
   target_ = window; pid_ = pid; threadId_ = thread; process_ = process; created_ = created;
   wchar_t title[512]{}; GetWindowTextW(window, title, 512);
-  title_ = title[0] ? title : L"Untitled window";
+  title_ = title; // Empty titles are localized by the UI.
   return true;
 }
 void Runtime::ClearTarget() {

@@ -8,6 +8,7 @@
 
 #include "NativeModules.h"
 #include "ClickEngineModule.h"
+#include "AppSettingsModule.h"
 #include "WindowAppearance.h"
 
 // A PackageProvider containing any turbo modules you define within this app project
@@ -104,10 +105,10 @@ static int RunApp() {
 _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE, HINSTANCE, PSTR, int) {
   try { return RunApp(); }
   catch (winrt::hresult_error const &error) {
-    MessageBoxW(nullptr, error.message().c_str(), L"RoClick could not start — reinstall the complete app", MB_OK | MB_ICONERROR);
+    MessageBoxW(nullptr, error.message().c_str(), (roclick::language::Get() == "tr" ? L"RoClick başlatılamadı — uygulamayı yeniden yükleyin" : L"RoClick could not start — reinstall the complete app"), MB_OK | MB_ICONERROR);
   }
   catch (std::exception const &) {
-    MessageBoxW(nullptr, L"The native engine could not start. Close RoClick and reinstall the complete app.", L"RoClick", MB_OK | MB_ICONERROR);
+    MessageBoxW(nullptr, (roclick::language::Get() == "tr" ? L"Tıklama motoru başlatılamadı. RoClick’i kapatıp uygulamayı yeniden yükleyin." : L"The native engine could not start. Close RoClick and reinstall the complete app."), L"RoClick", MB_OK | MB_ICONERROR);
   }
   return 1;
 }

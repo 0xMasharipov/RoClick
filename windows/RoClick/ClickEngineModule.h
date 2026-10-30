@@ -25,6 +25,7 @@ struct EngineEvent {
   REACT_FIELD(failures) double failures = 0;
   REACT_FIELD(error) std::string error;
   REACT_FIELD(errorCode) double errorCode = 0;
+  REACT_FIELD(errorKey) std::string errorKey;
   REACT_FIELD(held) bool held = false;
   REACT_FIELD(highResolution) bool highResolution = false;
   REACT_FIELD(acrylic) bool acrylic = false;
@@ -57,6 +58,7 @@ struct ClickEngineModule {
         e.targetTitle = winrt::to_string(r.targetTitle); e.targetPid = r.targetPid;
         e.submittedClicks = double(s.clicks); e.submittedEvents = double(s.inputEvents); e.submittedRate = r.rate;
         e.skipped = double(s.skipped); e.failures = double(s.failures); e.error = s.error; e.errorCode = s.errorCode;
+        e.errorKey = roclick::ErrorKey(s.errorKind);
         e.held = s.held; e.highResolution = r.highResolution;
         e.acrylic = roclick::appearance::acrylic; e.dark = roclick::appearance::dark; e.highContrast = roclick::appearance::highContrast;
         e.windowColor = roclick::appearance::Color(COLOR_WINDOW); e.textColor = roclick::appearance::Color(COLOR_WINDOWTEXT);

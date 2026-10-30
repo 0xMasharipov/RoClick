@@ -47,7 +47,7 @@ int main() {
     CHECK(p.calls.back().button==Button::Middle); CHECK(e.Get().clicks==1); }
   { Fake p; Engine e(p); p.results={{1,5},{1,0}}; e.Start(); e.Tick();
     CHECK(e.Get().state==State::Error); CHECK(!e.Get().held); CHECK(e.Get().clicks==0);
-    CHECK(e.Get().inputEvents==2); CHECK(e.Get().errorCode==5); CHECK(p.calls.size()==2); }
+    CHECK(e.Get().inputEvents==2); CHECK(e.Get().errorCode==5); CHECK(e.Get().errorKind==ErrorKind::InputRejected); CHECK(p.calls.size()==2); }
   { Fake p; Engine e(p); p.results={{0,0}}; e.Start(); e.Tick();
     CHECK(e.Get().state==State::Error); CHECK(p.calls.size()==1); CHECK(e.Get().clicks==0); }
   { Fake p; Engine e(p); p.results={{1,0},{0,5},{0,5},{1,0}};
@@ -70,13 +70,13 @@ int main() {
     p.At(9,e); CHECK(p.calls.size()==2); p.At(10,e); CHECK(e.Get().held); }
   { Fake p; Engine e(p); e.Configure({10,5,Button::Left,true}); p.results={{1,0},{0,5},{1,0}};
     e.Start(); e.Tick(); p.At(5,e); CHECK(e.Get().held); CHECK(e.Get().state==State::Error);
-    e.Stop(); CHECK(!e.Get().held); CHECK(e.Get().clicks==0); }
+    e.Stop(); CHECK(!e.Get().held); CHECK(e.Get().errorKind==ErrorKind::ReleaseRejected); CHECK(e.Get().clicks==0); }
   { Fake p; Engine e(p); e.Configure({10,0,Button::Left,false}); e.Start(); e.Tick();
     p.target=TargetState::Destroyed; e.Tick(); CHECK(e.Get().state==State::Error);
     e.Start(); CHECK(e.Get().state==State::Error); // Unlocked still requires recapture.
     e.CaptureAfter(500); p.At(500,e); e.Start(); e.Tick(); CHECK(e.Get().clicks==1); }
   { Fake p; Engine e(p); p.captureOK=false; e.CaptureAfter(500); p.At(500,e);
-    CHECK(e.Get().state==State::Error); CHECK(p.calls.empty()); }
+    CHECK(e.Get().state==State::Error); CHECK(e.Get().errorKind==ErrorKind::CaptureFailed); CHECK(p.calls.empty()); }
   { Fake p; Engine e(p); e.Start();
     // Irregular wakes under simulated load: bounded gaps, no replay at the same time.
     for(int ms : {0,10,35,36,37,45,200,201,202,210,220}) p.At(ms,e);
@@ -84,5 +84,17 @@ int main() {
     CHECK(e.Get().skipped>0); }
   { Fake p; Engine e(p); p.results={{0,0,true}}; e.Start(); e.Tick();
     CHECK(e.Get().failures==0); CHECK(e.Get().clicks==0); e.Stop(); CHECK(!e.Active()); }
+  { Fake p; Engine e(p); e.Configure({0,0,Button::Left,true});
+    CHECK(e.Get().errorKind==ErrorKind::InvalidConfig);
+    e.CaptureAfter(500); CHECK(e.Get().errorKind==ErrorKind::None); }
+  { Fake p; Engine e(p); p.target=TargetState::Missing; e.Start();
+    CHECK(e.Get().errorKind==ErrorKind::TargetMissing); }
+  { Fake p; Engine e(p); e.Start(); p.target=TargetState::Destroyed; e.Tick();
+    CHECK(e.Get().errorKind==ErrorKind::TargetClosed); }
+  for (auto kind : {ErrorKind::MonitoringUnavailable, ErrorKind::TimerUnavailable, ErrorKind::SchedulerWaitFailed}) {
+    Fake p; Engine e(p); e.ExternalFailure(kind, "diagnostic", 5);
+    CHECK(e.Get().errorKind==kind); CHECK(e.Get().errorCode==5); CHECK(e.Get().error=="diagnostic");
+  }
+  CHECK(std::string(ErrorKey(ErrorKind::None)).empty());
   std::cout << "Engine tests passed (virtual-time 60 s schedules, cancellation, reconfigure, partial failures, focus, destruction, capture).\n";
 }
