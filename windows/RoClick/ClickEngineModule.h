@@ -43,6 +43,7 @@ struct ClickEngineModule {
   REACT_INIT(Initialize)
   void Initialize(winrt::Microsoft::ReactNative::ReactContext const &) noexcept {
     reporter_ = std::thread([this] {
+      winrt::init_apartment(winrt::apartment_type::multi_threaded);
       std::unique_lock lock(mutex_);
       while (!cv_.wait_for(lock, std::chrono::milliseconds(250), [this] { return quit_; })) {
         if (!observing_ || pending_.exchange(true)) continue;
@@ -63,6 +64,7 @@ struct ClickEngineModule {
         e.highlightColor = roclick::appearance::Color(COLOR_HIGHLIGHT); e.highlightTextColor = roclick::appearance::Color(COLOR_HIGHLIGHTTEXT);
         onState(std::move(e)); // Reporter only; scheduler never calls JS or waits for it.
       }
+      winrt::uninit_apartment();
     });
   }
   ~ClickEngineModule() {

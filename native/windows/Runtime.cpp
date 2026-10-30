@@ -85,9 +85,16 @@ void Runtime::Work() {
       if (stopRequested_ || shutdown_) break;
       switch (c.op) {
         case Op::Configure: engine_.Configure(c.config); break;
-        case Op::Start: engine_.Start(); break;
+        case Op::Start:
+          if (monitoring_) engine_.Start();
+          else engine_.ExternalFailure("Native input monitoring is unavailable. Restart RoClick on the interactive desktop.");
+          break;
         case Op::Stop: engine_.Stop(); break;
-        case Op::Toggle: if (engine_.Active()) engine_.Stop(); else engine_.Start(); break;
+        case Op::Toggle:
+          if (engine_.Active()) engine_.Stop();
+          else if (monitoring_) engine_.Start();
+          else engine_.ExternalFailure("Native input monitoring is unavailable. Restart RoClick on the interactive desktop.");
+          break;
         case Op::Capture: engine_.CaptureAfter(c.delay); break;
         case Op::Clear: engine_.ClearTarget(); break;
         case Op::Error: engine_.ExternalFailure("Native keyboard/window monitoring could not start. Restart RoClick on the interactive desktop."); break;
@@ -178,6 +185,7 @@ void Runtime::Hooks() {
   hookThreadId_ = GetCurrentThreadId();
   const auto keyboard = keys_[0] ? nullptr : SetWindowsHookExW(WH_KEYBOARD_LL, Keyboard, GetModuleHandleW(nullptr), 0);
   const auto events = SetWinEventHook(EVENT_OBJECT_DESTROY, EVENT_OBJECT_DESTROY, nullptr, WindowEvent, 0, 0, WINEVENT_OUTOFCONTEXT);
+  monitoring_ = (keys_[0] || keyboard) && events;
   if ((!keys_[0] && !keyboard) || !events) Enqueue({Op::Error});
   SetEvent(hooksReady_);
   while (GetMessageW(&message, nullptr, 0, 0) > 0) { TranslateMessage(&message); DispatchMessageW(&message); }

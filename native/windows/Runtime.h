@@ -52,6 +52,7 @@ class Runtime final : private Platform {
   HANDLE wake_ = nullptr, timer_ = nullptr, hooksReady_ = nullptr;
   std::thread worker_, hooks_;
   std::atomic<bool> shutdown_{false}, stopRequested_{false};
+  std::atomic<bool> monitoring_{false};
   std::atomic<Time> stopAt_{0};
   std::atomic<DWORD> hookThreadId_{0};
   std::atomic<HWND> watched_{nullptr};

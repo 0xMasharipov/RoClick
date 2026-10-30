@@ -27,7 +27,13 @@ jobs:
       - name: Install pinned dependencies
         run: npm ci --no-audit --no-fund
       - name: Install Inno Setup
-        run: choco install innosetup --version=6.4.3 --allow-downgrade --yes --no-progress
+        shell: pwsh
+        run: |
+          $file = Join-Path $env:RUNNER_TEMP 'innosetup-6.4.3.exe'
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-6_4_3/innosetup-6.4.3.exe' -OutFile $file
+          if ((Get-FileHash $file -Algorithm SHA256).Hash -ne 'f3c42116542c4cc57263c5ba6c4feabfc49fe771f2f98a79d2f7628b8762723b') { throw 'Inno Setup checksum mismatch' }
+          $process = Start-Process $file -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Inno Setup installation failed: $($process.ExitCode)" }
       - name: Build native tests, release app and offline installer
         shell: pwsh
         run: ./build.ps1 -SkipInstall

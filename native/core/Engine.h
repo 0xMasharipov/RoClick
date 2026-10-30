@@ -119,6 +119,7 @@ class Engine {
       next_ += missed * Interval();
     }
     const bool pair = s_.config.pressMs == 0;
+    downAt_ = p_.Now();
     const auto sent = p_.Input(s_.config.button, true, pair);
     if (sent.cancelled) { CheckTarget(); return; }
     s_.inputEvents += sent.count;
@@ -196,12 +197,12 @@ class Engine {
     }
     // Keep phase for small wake jitter, but never squeeze a catch-up interval
     // below 90% of the configured period after a delayed submission.
-    if (next_ - now < Interval() * 9 / 10) next_ = now + Interval();
+    if (next_ - downAt_ < Interval() * 9 / 10) next_ = downAt_ + Interval();
   }
   Platform &p_;
   Snapshot s_;
   Button heldButton_ = Button::Left;
-  Time next_ = 0, releaseAt_ = 0, captureAt_ = 0, lastClick_ = -1;
+  Time next_ = 0, releaseAt_ = 0, captureAt_ = 0, lastClick_ = -1, downAt_ = 0;
   bool recaptureRequired_ = false;
 };
 } // namespace roclick

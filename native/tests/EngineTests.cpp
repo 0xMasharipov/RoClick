@@ -64,5 +64,25 @@ int main() {
     e.Stop(); p.At(1000,e); CHECK(p.target==TargetState::Missing);
     e.CaptureAfter(500); p.At(1500,e); CHECK(e.Get().state==State::Stopped); CHECK(p.target==TargetState::Focused); }
   { Fake p; Engine e(p); e.Start(); e.Configure({1,1,Button::Left,true}); CHECK(!e.Active()); }
+  { Fake p; Engine e(p); e.Configure({10,5,Button::Middle,true}); e.Start(); e.Tick();
+    p.At(4,e); CHECK(e.Get().held); CHECK(e.Get().clicks==0);
+    p.At(5,e); CHECK(!e.Get().held); CHECK(e.Get().clicks==1); CHECK(e.Get().inputEvents==2);
+    p.At(9,e); CHECK(p.calls.size()==2); p.At(10,e); CHECK(e.Get().held); }
+  { Fake p; Engine e(p); e.Configure({10,5,Button::Left,true}); p.results={{1,0},{0,5},{1,0}};
+    e.Start(); e.Tick(); p.At(5,e); CHECK(e.Get().held); CHECK(e.Get().state==State::Error);
+    e.Stop(); CHECK(!e.Get().held); CHECK(e.Get().clicks==0); }
+  { Fake p; Engine e(p); e.Configure({10,0,Button::Left,false}); e.Start(); e.Tick();
+    p.target=TargetState::Destroyed; e.Tick(); CHECK(e.Get().state==State::Error);
+    e.Start(); CHECK(e.Get().state==State::Error); // Unlocked still requires recapture.
+    e.CaptureAfter(500); p.At(500,e); e.Start(); e.Tick(); CHECK(e.Get().clicks==1); }
+  { Fake p; Engine e(p); p.captureOK=false; e.CaptureAfter(500); p.At(500,e);
+    CHECK(e.Get().state==State::Error); CHECK(p.calls.empty()); }
+  { Fake p; Engine e(p); e.Start();
+    // Irregular wakes under simulated load: bounded gaps, no replay at the same time.
+    for(int ms : {0,10,35,36,37,45,200,201,202,210,220}) p.At(ms,e);
+    for(size_t i=1;i<p.calls.size();++i) CHECK(p.calls[i].time-p.calls[i-1].time >= 9*Millisecond);
+    CHECK(e.Get().skipped>0); }
+  { Fake p; Engine e(p); p.results={{0,0,true}}; e.Start(); e.Tick();
+    CHECK(e.Get().failures==0); CHECK(e.Get().clicks==0); e.Stop(); CHECK(!e.Active()); }
   std::cout << "Engine tests passed (virtual-time 60 s schedules, cancellation, reconfigure, partial failures, focus, destruction, capture).\n";
 }
