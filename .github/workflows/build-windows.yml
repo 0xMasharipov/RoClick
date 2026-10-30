@@ -1,36 +1,56 @@
-name: Build Windows EXE
+name: Build Windows installer
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main, 'codex/native-windows*']
+  pull_request:
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    runs-on: windows-latest
-
+  portable-tests:
+    runs-on: ubuntu-24.04
     steps:
-      - name: Check out source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - run: cmake -S native -B build/native && cmake --build build/native && ctest --test-dir build/native --output-on-failure
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
-
-      - name: Build executable
-        run: .\build.ps1
+          node-version: '22.14.0'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install Inno Setup
+        run: choco install innosetup --version=6.4.3 --allow-downgrade --yes --no-progress
+      - name: Build native tests, release app and offline installer
         shell: pwsh
-
-      - name: Calculate SHA-256
-        run: Get-FileHash dist\RoClick.exe -Algorithm SHA256 | Format-List | Out-File dist\RoClick.sha256.txt
+        run: ./build.ps1 -SkipInstall
+      - name: Installer smoke test and screenshots
         shell: pwsh
-
-      - name: Upload artifact
+        run: ./scripts/smoke-install.ps1
+      - name: Upload prepared artifacts (no release publishing)
         uses: actions/upload-artifact@v4
         with:
-          name: RoClick-Windows
+          name: RoClick-Windows-x64
           path: |
-            dist/RoClick.exe
-            dist/RoClick.sha256.txt
+            dist/RoClick-Setup.exe
+            dist/SHA256SUMS.txt
+            dist/roclick_benchmark.exe
+            artifacts/screenshots/*.png
+            artifacts/smoke-install.json
+          if-no-files-found: error
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RoClick-build-diagnostics
+          path: |
+            build/windows.binlog
+            build/native/Testing/Temporary/LastTest.log
+            artifacts/*.log
