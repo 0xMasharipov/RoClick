@@ -104,13 +104,17 @@ try {
   # Verify edits and validation survive a live locale switch.
   $shell = New-Object -ComObject WScript.Shell
   (Find-Control 'interval-input').SetFocus()
-  $shell.SendKeys('^a0{TAB}')
+  $shell.SendKeys('^a0')
+  Start-Sleep -Milliseconds 500
+  $shell.SendKeys('{ENTER}{TAB}')
   Start-Sleep -Milliseconds 500
   if (-not (Find-Control 'validation')) { throw 'Invalid interval was not rejected.' }
   Click-Control 'language-tr'
   Assert-Name 'validation' '1–1.000 ms arasında tam sayı bir aralık gir.'
   (Find-Control 'interval-input').SetFocus()
-  $shell.SendKeys('^a25{TAB}')
+  $shell.SendKeys('^a25')
+  Start-Sleep -Milliseconds 500
+  $shell.SendKeys('{ENTER}{TAB}')
   Start-Sleep -Milliseconds 500
   Assert-NoValidation
   Click-Control 'button-right'

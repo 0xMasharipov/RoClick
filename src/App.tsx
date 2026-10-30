@@ -187,7 +187,7 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
         <TextInput testID="interval-input" accessibilityLabel={t('intervalLabel')} value={intervalText}
           selectTextOnFocus keyboardType="number-pad" maxLength={4}
           onChangeText={text => { if (text !== intervalText) { setIntervalText(text); setValidation('applyInterval'); } }}
-          onEndEditing={() => commit('intervalMs', intervalText)} onSubmitEditing={() => commit('intervalMs', intervalText)}
+          onEndEditing={event => commit('intervalMs', event.nativeEvent.text)} onSubmitEditing={event => commit('intervalMs', event.nativeEvent.text)}
           style={[styles.input, {color: colors.text, borderColor: colors.line, backgroundColor: colors.bg}]} />
         <Text style={{color: colors.secondary}}>ms</Text>
       </View>
@@ -208,7 +208,7 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
           <Text style={[styles.label, styles.grow, {color: colors.text}]}>{t('press')}</Text>
           <TextInput testID="press-input" accessibilityLabel={t('pressLabel')} value={pressText} keyboardType="number-pad" maxLength={3} selectTextOnFocus
             onChangeText={text => { if (text !== pressText) { setPressText(text); setValidation('applyPress'); } }}
-            onEndEditing={() => commit('pressMs', pressText)} onSubmitEditing={() => commit('pressMs', pressText)}
+            onEndEditing={event => commit('pressMs', event.nativeEvent.text)} onSubmitEditing={event => commit('pressMs', event.nativeEvent.text)}
             style={[styles.input, {color: colors.text, backgroundColor: colors.bg, borderColor: colors.line}]} />
           <Text style={{color: colors.secondary}}>ms</Text>
         </View>
