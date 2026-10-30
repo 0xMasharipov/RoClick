@@ -154,8 +154,8 @@ try {
   Assert-Name 'engine-status' 'Duraklatıldı · hedef odakta değil'
   Click-Control 'language-en'
   Assert-Name 'engine-status' 'Paused · target not focused'
-  $shell.SendKeys('{ESC}')
-  Start-Sleep -Milliseconds 500
+  # Low-level hotkeys deliberately ignore injected keys; exercise the UI Stop.
+  Click-Control 'primary-action'
   Assert-Name 'engine-status' 'Ready when you are'
   Click-Control 'advanced'
   Click-Control 'clear-target'
