@@ -11,6 +11,13 @@ type Colors = {bg: string; panel: string; text: string; secondary: string; line:
 const light: Colors = {bg: '#F0F2F6', panel: '#FFFFFF', text: '#182130', secondary: '#586375', line: '#CED4DE', blue: '#0067DC', onBlue: '#FFFFFF', danger: '#B42332'};
 const dark: Colors = {bg: '#171A20', panel: '#252A33', text: '#F3F5FA', secondary: '#ADB7C8', line: '#626D7E', blue: '#82B7FF', onBlue: '#102440', danger: '#FF9DA7'};
 
+// Keep numeric labels consistent on Windows Hermes without locale support.
+const wholeNumber = (value: number) => Math.trunc(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const configuredRate = (interval: number) => {
+  const [whole, decimal] = (1000 / interval).toFixed(1).split('.');
+  return wholeNumber(Number(whole)) + (decimal === '0' ? '' : `.${decimal}`);
+};
+
 function Action({label, onPress, colors, primary, disabled, style, selected, expanded}: {
   label: string; onPress: () => void; colors: Colors; primary?: boolean; disabled?: boolean;
   style?: StyleProp<ViewStyle>; selected?: boolean; expanded?: boolean;
@@ -124,7 +131,7 @@ export default function App() {
           <Text style={[styles.small, {color: colors.secondary}]}>Submitted to Windows</Text>
         </View>
         <View style={styles.total}>
-          <Text style={[styles.totalNumber, {color: colors.text}]}>{state?.submittedClicks.toLocaleString() ?? '—'}</Text>
+          <Text style={[styles.totalNumber, {color: colors.text}]}>{state ? wholeNumber(state.submittedClicks) : '—'}</Text>
           <Text style={[styles.small, {color: colors.secondary}]}>This session</Text>
         </View>
       </View>
@@ -138,10 +145,10 @@ export default function App() {
     <View style={[styles.panel, {backgroundColor: colors.panel, borderColor: colors.line}]}>
       <View style={styles.row}>
         <View style={styles.grow}><Text style={[styles.label, {color: colors.text}]}>Click speed</Text>
-          <Text style={[styles.hint, {color: colors.secondary}]}>{(1000 / config.intervalMs).toLocaleString(undefined, {maximumFractionDigits: 1})} clicks/sec configured</Text></View>
+          <Text style={[styles.hint, {color: colors.secondary}]}>{configuredRate(config.intervalMs)} clicks/sec configured</Text></View>
         <TextInput accessibilityLabel="Click interval in milliseconds" value={intervalText}
           selectTextOnFocus keyboardType="number-pad" maxLength={4}
-          onChangeText={text => { setIntervalText(text); setValidation('Apply a valid interval with Enter or Tab.'); }}
+          onChangeText={text => { if (text !== intervalText) { setIntervalText(text); setValidation('Apply a valid interval with Enter or Tab.'); } }}
           onEndEditing={() => commit('intervalMs', intervalText)} onSubmitEditing={() => commit('intervalMs', intervalText)}
           style={[styles.input, {color: colors.text, borderColor: colors.line, backgroundColor: colors.bg}]} />
         <Text style={{color: colors.secondary}}>ms</Text>
@@ -172,7 +179,7 @@ export default function App() {
         <View style={styles.row}>
           <Text style={[styles.label, styles.grow, {color: colors.text}]}>Press duration</Text>
           <TextInput accessibilityLabel="Press duration in milliseconds" value={pressText} keyboardType="number-pad" maxLength={3} selectTextOnFocus
-            onChangeText={text => { setPressText(text); setValidation('Apply a valid press duration with Enter or Tab.'); }}
+            onChangeText={text => { if (text !== pressText) { setPressText(text); setValidation('Apply a valid press duration with Enter or Tab.'); } }}
             onEndEditing={() => commit('pressMs', pressText)} onSubmitEditing={() => commit('pressMs', pressText)}
             style={[styles.input, {color: colors.text, backgroundColor: colors.bg, borderColor: colors.line}]} />
           <Text style={{color: colors.secondary}}>ms</Text>

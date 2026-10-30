@@ -42,6 +42,13 @@ function Click-Control([string]$name) {
   Start-Sleep -Milliseconds 500
 }
 function Screenshot([string]$name) {
+  $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::IsScrollPatternAvailableProperty, $true)
+  $scroller = $script:element.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+  if ($scroller) {
+    $scroll = $scroller.GetCurrentPattern([System.Windows.Automation.ScrollPattern]::Pattern)
+    $scroll.SetScrollPercent([System.Windows.Automation.ScrollPattern]::NoScroll, 0)
+    Start-Sleep -Milliseconds 500
+  }
   $rect = [CaptureWindow+Rect]::new()
   [CaptureWindow]::GetWindowRect($script:app.MainWindowHandle,[ref]$rect) | Out-Null
   $bitmap = [Drawing.Bitmap]::new($rect.Right-$rect.Left,$rect.Bottom-$rect.Top)
@@ -71,10 +78,12 @@ try {
   Click-Control 'Advanced settings +'
   Click-Control 'Light'
   Click-Control 'Advanced settings −'
+  if (Find-Control 'Apply a valid press duration with Enter or Tab.') { throw 'Unedited press duration requires validation.' }
   Screenshot 'roclick-light'
   Click-Control 'Advanced settings +'
   Click-Control 'Dark'
   Click-Control 'Advanced settings −'
+  if (Find-Control 'Apply a valid press duration with Enter or Tab.') { throw 'Unedited press duration requires validation.' }
   Screenshot 'roclick-dark'
   $app.CloseMainWindow() | Out-Null
   if (-not $app.WaitForExit(10000)) { throw 'App did not close cleanly.' }
