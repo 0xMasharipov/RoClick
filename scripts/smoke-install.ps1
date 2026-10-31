@@ -9,6 +9,13 @@ using System.Runtime.InteropServices;
 public static class CaptureWindow {
   [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
   [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out Rect r);
+  [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr h, int attribute, out Rect r, int size);
+  public static Rect Bounds(IntPtr h) {
+    Rect r;
+    // DWMWA_EXTENDED_FRAME_BOUNDS excludes invisible resize borders/shadows.
+    if (DwmGetWindowAttribute(h, 9, out r, Marshal.SizeOf<Rect>()) != 0) GetWindowRect(h, out r);
+    return r;
+  }
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr h, int x, int y, int width, int height, bool repaint);
 }
@@ -52,8 +59,7 @@ function Screenshot([string]$name) {
     $scroll.ScrollIntoView()
     Start-Sleep -Milliseconds 500
   }
-  $rect = [CaptureWindow+Rect]::new()
-  [CaptureWindow]::GetWindowRect($script:app.MainWindowHandle,[ref]$rect) | Out-Null
+  $rect = [CaptureWindow]::Bounds($script:app.MainWindowHandle)
   $bitmap = [Drawing.Bitmap]::new($rect.Right-$rect.Left,$rect.Bottom-$rect.Top)
   $graphics = [Drawing.Graphics]::FromImage($bitmap)
   try {
@@ -182,12 +188,11 @@ try {
   Start-Sleep -Milliseconds 500
   Screenshot 'roclick-tr-narrow'
   Click-Control 'advanced'
-  $press = Find-Control 'press-input'
-  $press.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern).ScrollIntoView()
+  $themeControl = Find-Control 'theme-dark'
+  $themeControl.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern).ScrollIntoView()
   Start-Sleep -Milliseconds 500
   # Capture the current scroll position for the expanded controls.
-  $rect = [CaptureWindow+Rect]::new()
-  [CaptureWindow]::GetWindowRect($app.MainWindowHandle, [ref]$rect) | Out-Null
+  $rect = [CaptureWindow]::Bounds($app.MainWindowHandle)
   $bitmap = [Drawing.Bitmap]::new($rect.Right-$rect.Left, $rect.Bottom-$rect.Top)
   $graphics = [Drawing.Graphics]::FromImage($bitmap)
   try {

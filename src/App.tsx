@@ -93,6 +93,7 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
   const [pressText, setPressText] = useState('0');
   const [validation, setValidation] = useState<'' | 'durationBelow' | 'applyInterval' | 'applyPress' | 'invalidInterval' | 'invalidPress'>('');
   const [advanced, setAdvanced] = useState(false);
+  const [heroWidth, setHeroWidth] = useState(360);
   const [theme, setTheme] = useState<Theme>('system');
   useEffect(() => {
     const subscription = Engine.onState(next => { setState(next); Engine.acknowledge(); });
@@ -138,10 +139,10 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
         <Action id="language-tr" compact label="Türkçe" colors={colors} selected={locale === 'tr'} onPress={() => onLanguage('tr')} />
       </View>
     </View>
-    <View style={[styles.hero, {backgroundColor: state?.highContrast ? colors.panel : '#101722'}]}>
+    <View onLayout={event => setHeroWidth(event.nativeEvent.layout.width)} style={[styles.hero, {backgroundColor: state?.highContrast ? colors.panel : '#101722'}]}>
       {!state?.highContrast && <Image source={require('../assets/gaming-header.png')} style={styles.heroArt} accessible={false} />}
-      <View style={styles.heroCopy}>
-        <Text style={[styles.heroTitle, {color: state?.highContrast ? colors.text : '#FFFFFF'}]}>{t('tagline')}</Text>
+      <View style={[styles.heroCopy, {width: state?.highContrast ? '100%' : Math.floor(heroWidth * 0.48)}]}>
+        <Text style={[styles.heroTitle, heroWidth < 360 && {fontSize: 16, lineHeight: 20}, {color: state?.highContrast ? colors.text : '#FFFFFF'}]}>{t('tagline')}</Text>
         <Text style={[styles.heroHint, {color: state?.highContrast ? colors.text : '#C2D0E1'}]}>{t('heroHint')}</Text>
       </View>
     </View>
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
   languages: {flexDirection: 'row', gap: 4}, logo: {width: 28, height: 28}, brand: {fontSize: 21, fontWeight: '700'},
   hero: {height: 96, borderRadius: 16, overflow: 'hidden', justifyContent: 'center'},
   heroArt: {position: 'absolute', width: '100%', height: '100%', resizeMode: 'cover'},
-  heroCopy: {width: '52%', padding: 12}, heroTitle: {fontSize: 19, lineHeight: 23, fontWeight: '700'}, heroHint: {fontSize: 11, lineHeight: 15, marginTop: 5},
+  heroCopy: {padding: 12}, heroTitle: {fontSize: 19, lineHeight: 23, fontWeight: '700'}, heroHint: {fontSize: 11, lineHeight: 15, marginTop: 5},
   panel: {borderRadius: 16, borderWidth: 1, padding: 16},
   statusRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
   statusDot: {width: 7, height: 7, borderRadius: 4}, status: {fontSize: 15, fontWeight: '600', flex: 1},
