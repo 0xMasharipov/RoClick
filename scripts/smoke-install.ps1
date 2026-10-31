@@ -161,15 +161,15 @@ try {
   [CaptureWindow]::SetForegroundWindow($app.MainWindowHandle) | Out-Null
   for ($i=0; $i -lt 40; $i++) {
     $receiver.Refresh()
-    if ($receiver.MainWindowHandle -ne 0 -and (Find-Control 'capture').Current.Name -eq 'Roblox’u yeniden bul') { break }
+    if ($receiver.MainWindowHandle -ne 0 -and (Find-Control 'capture').Current.Name -eq "Roblox’u yeniden bul") { break }
     Start-Sleep -Milliseconds 250
   }
   if ($receiver.MainWindowHandle -eq 0) { throw 'Receiver window did not open.' }
-  Assert-Name 'capture' 'Roblox’u yeniden bul'
+  Assert-Name 'capture' "Roblox’u yeniden bul"
   Assert-Name 'engine-status' 'Hazır olduğunda başla'
   # Explicit retries also find the player without switching focus.
   Click-Control 'capture'
-  Assert-Name 'capture' 'Roblox’u yeniden bul'
+  Assert-Name 'capture' "Roblox’u yeniden bul"
   Click-Control 'primary-action'
   Assert-Name 'engine-status' 'Duraklatıldı · hedef odakta değil'
   Click-Control 'language-en'
@@ -186,7 +186,7 @@ try {
   Click-Control 'language-tr'
   Close-App
   Start-App
-  Assert-Name 'capture' 'Roblox’u bul'
+  Assert-Name 'capture' "Roblox’u bul"
   foreach ($locale in @('en','tr')) {
     Click-Control "language-$locale"
     foreach ($theme in @('light','dark')) {

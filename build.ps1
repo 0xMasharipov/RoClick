@@ -9,6 +9,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "$Program failed with exit code $LASTEXITCODE" }
   }
   if (-not $SkipInstall) { Invoke-Checked 'npm.cmd' @('ci', '--no-audit', '--no-fund') }
+  Invoke-Checked 'powershell.exe' @('-NoProfile', '-NonInteractive', '-File', 'scripts/test-powershell.ps1')
   Invoke-Checked 'npm.cmd' @('run', 'typecheck')
   Invoke-Checked 'npm.cmd' @('run', 'test:localization')
   Invoke-Checked 'powershell.exe' @('-NoProfile', '-NonInteractive', '-File', 'scripts/test-updates.ps1')
