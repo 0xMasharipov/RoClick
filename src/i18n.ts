@@ -1,7 +1,7 @@
 import type {Locale} from './native/NativeAppSettings';
 
 export const en = {
-  tagline: 'Your pace. Your control.', heroHint: 'Ready for your next session.',
+  tagline: 'Your pace. Your control.', heroHint: 'Ready. Set. Click.',
   language: 'Language', languageSave: 'Language changed for this session, but could not be saved. Try again.',
   ready: 'Ready when you are', running: 'Clicking', paused: 'Paused · target not focused',
   capturing: 'Focus your target now…', needsAttention: 'Stopped · needs attention', connecting: 'Connecting to click engine…',
@@ -39,7 +39,7 @@ export const en = {
 };
 export type MessageKey = keyof typeof en;
 export const tr: Record<MessageKey, string> = {
-  tagline: 'Hız senin. Kontrol senin.', heroHint: 'Bir sonraki oturumuna hazır.',
+  tagline: 'Hız senin. Kontrol senin.', heroHint: 'Hazır. Ayarla. Tıkla.',
   language: 'Dil', languageSave: 'Dil bu oturum için değiştirildi ancak kaydedilemedi. Yeniden deneyin.',
   ready: 'Hazır olduğunda başla', running: 'Tıklanıyor', paused: 'Duraklatıldı · hedef odakta değil',
   capturing: 'Şimdi hedef pencereye geç…', needsAttention: 'Durduruldu · işlem gerekiyor', connecting: 'Tıklama motoruna bağlanılıyor…',
