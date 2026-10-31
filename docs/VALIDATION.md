@@ -1,6 +1,6 @@
 # Release acceptance record
 
-**Status: v1.0.0 installer published for download. Windows 10/11 reference-machine acceptance is pending. No measured 1,000 clicks/sec claim is approved.**
+**Status: v1.1.0 installer published for download. Windows 10/11 reference-machine acceptance is pending. No measured 1,000 clicks/sec claim is approved.**
 
 ## Automated evidence
 
@@ -10,19 +10,20 @@
 | TypeScript | Passed locally |
 | English/Turkish dictionaries and formatting | Passed locally: matching keys/placeholders, all native error identifiers, Turkish glyphs, grouped and decimal numbers |
 | Automatic-update offline tests | Passed locally with PowerShell 7: stable versions, asset origin/limits, checksum tampering, downgrade prevention, deferred installation, disabling checks, cancelling pending updates, installer flags/results and reopened-window checks; Windows build also runs the tests with Windows PowerShell 5.1 |
-| Automatic-update native helper | Passed C++17 syntax checks against Win32 headers; full MSVC build and installed-helper smoke for this change remain pending |
+| Automatic-update native helper | Passed MSVC build and installed-helper launch/disabled-preference smoke on Windows Server 2022 in [run 41233456606](https://github.com/0xMasharipov/RoClick/actions/runs/41233456606) |
+| Automatic Roblox discovery | Passed Windows native discovery tests and installed-app smoke with an independent player fixture; unrelated windows were rejected |
 | Real Windows automatic upgrade between two releases | Pending; requires two updater-enabled versioned installers and verification on Windows 10/11 |
 | Release JS bundle | Passed locally with Metro (production Windows bundle and logo asset) |
-| Windows native build and installer | Passed on Windows Server 2022 in [run 41149902615](https://github.com/0xMasharipov/RoClick/actions/runs/41149902615), main commit `31c3587`; original installer published as [v1.0.0](https://github.com/0xMasharipov/RoClick/releases/tag/v1.0.0) |
+| Windows native build and installer | Passed on Windows Server 2022 in [run 41233456606](https://github.com/0xMasharipov/RoClick/actions/runs/41233456606), release commit `df440cb`; installer published as [v1.1.0](https://github.com/0xMasharipov/RoClick/releases/tag/v1.1.0) |
 | Installation / bundled launch / reinstall / uninstall | Passed in the same run; downloaded `smoke-install.json` confirms all four checks |
 | Clean Windows 10 and 11 without developer tools | Pending; a hosted build runner does not prove this |
-| English/Turkish native light/dark screenshots | All four captured, visually reviewed, and saved in [screenshots/](screenshots/); narrow Turkish and expanded Advanced captures are included |
+| English/Turkish native light/dark screenshots | New v1.1.0 captures are in the release build's artifact. The reviewed documentation screenshots in [screenshots/](screenshots/) were captured in [v1.0.0 run 41149902615](https://github.com/0xMasharipov/RoClick/actions/runs/41149902615); narrow Turkish and expanded Advanced captures are included |
 | Language persistence and live switching | Passed: Turkish survives app restart; switching keeps interval/button settings and a paused native session |
 | Native errors and input validation | Passed: native capture errors and invalid numeric-input messages translate immediately; unedited fields do not produce spurious validation |
 | Showcase sheet | PNG and editable SVG assembled from the actual four installed-app screenshots |
 | High contrast, physical hotkeys, multi-DPI and clean Win10/11 review | Reference-machine acceptance remains pending |
 
-Downloaded installer and benchmark SHA-256 checksums both match `dist/SHA256SUMS.txt` from this run. The four main screenshots show the top of the scrollable window at the runner's available desktop size. The narrow capture uses a 360 px outer window; the Advanced capture intentionally scrolls to the expanded controls. CI uses injected keyboard input for numeric editing; native hotkeys intentionally ignore injected keys, so this does not prove physical hotkey acceptance.
+Downloaded v1.1.0 installer and benchmark SHA-256 checksums both match `dist/SHA256SUMS.txt` from this run and GitHub's uploaded-asset digests. The installer resources identify file version `1.1.0.0` and product version `1.1.0`. The four main screenshots show the top of the scrollable window at the runner's available desktop size. The narrow capture uses a 360 px outer window; the Advanced capture intentionally scrolls to the expanded controls. CI uses injected keyboard input for numeric editing; native hotkeys intentionally ignore injected keys, so this does not prove physical hotkey acceptance.
 
 ## Performance protocol
 
