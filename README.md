@@ -6,9 +6,13 @@ A local auto-clicker for **x64 Windows 10 22H2 and Windows 11**. Set your pace, 
 
 The app supports **English and Türkçe** with an instant, remembered language switch. The installed app works offline with its runtimes bundled. No Python or development server is required. No telemetry or automatic updates.
 
-[Get a candidate build](https://github.com/0xMasharipov/RoClick/actions/workflows/build-windows.yml) · [Screenshots](#screenshots) · [Build from source](#build-on-windows) · [Validation](docs/VALIDATION.md)
+[**Download RoClick for Windows (.exe)**](https://github.com/0xMasharipov/RoClick/releases/latest/download/RoClick-Setup.exe)
 
-**This migration is a release candidate, not a validated 1,000 clicks/sec release.** See [validation status](docs/VALIDATION.md). Published Python releases remain available below.
+Run `RoClick-Setup.exe`, install, and open RoClick from the Start menu. Everything needed to run the app is included; no Python, Node.js, or developer tools are required.
+
+[Latest release and checksums](https://github.com/0xMasharipov/RoClick/releases/latest) · [Screenshots](#screenshots) · [Build from source](#build-on-windows) · [Validation](docs/VALIDATION.md)
+
+**Windows 10/11 reference-machine validation is pending; 1,000 clicks/sec is not a validated guarantee.** See [validation status](docs/VALIDATION.md). Published Python releases remain available below.
 
 ## Screenshots
 
@@ -46,11 +50,15 @@ The digit shortcuts pass through to the foreground app. Typing 1 in RoClick does
 | **F6** | Toggle globally |
 | **Capture window** | Stop, then capture the window focused after two seconds |
 
-### Download a candidate build
+### Download for Windows
 
-Open [Build Windows installer](https://github.com/0xMasharipov/RoClick/actions/workflows/build-windows.yml), select a successful run on `codex/native-windows-migration`, and download its **RoClick-Windows-x64** artifact (GitHub sign-in required). Extract the ZIP and run `RoClick-Setup.exe`. `SHA256SUMS.txt` contains checksums for the installer and the separate benchmark tool.
+1. [Download the latest Windows installer](https://github.com/0xMasharipov/RoClick/releases/latest/download/RoClick-Setup.exe) (x64 Windows 10 22H2 or Windows 11; no GitHub sign-in required).
+2. Run `RoClick-Setup.exe` and follow the setup steps. Administrator privileges are not required.
+3. Open **RoClick** from the Start menu.
 
-The installer runs per user and bundles the production JavaScript, assets, and native runtimes. Older published Python executables are listed under [existing releases](#existing-published-releases).
+The installer runs per user and bundles the production JavaScript, assets, and native runtimes for offline use. [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/latest/download/SHA256SUMS.txt) contains checksums for the installer and the separate benchmark tool. See the [latest release](https://github.com/0xMasharipov/RoClick/releases/latest) for release notes and all downloads. Older published Python executables are listed under [existing releases](#existing-published-releases).
+
+For development builds, open [Build Windows installer](https://github.com/0xMasharipov/RoClick/actions/workflows/build-windows.yml), select a successful run on `main`, and download its **RoClick-Windows-x64** artifact (GitHub sign-in required). Extract the ZIP and run `RoClick-Setup.exe`.
 
 **Speed means complete down/up clicks successfully submitted by `SendInput`.** The measured rate is a rolling native measurement, updated at most four times per second. It does not measure whether another app received or processed input. Target applications may process fewer clicks. **1,000 clicks/sec is a measured performance target, not a real-time guarantee.**
 

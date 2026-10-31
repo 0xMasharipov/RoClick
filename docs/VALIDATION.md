@@ -1,6 +1,6 @@
 # Release acceptance record
 
-**Status: implementation candidate. Windows 10/11 reference-machine acceptance is pending. No measured 1,000 clicks/sec claim is approved.**
+**Status: v1.0.0 installer published for download. Windows 10/11 reference-machine acceptance is pending. No measured 1,000 clicks/sec claim is approved.**
 
 ## Automated evidence
 
@@ -10,7 +10,7 @@
 | TypeScript | Passed locally |
 | English/Turkish dictionaries and formatting | Passed locally: matching keys/placeholders, all native error identifiers, Turkish glyphs, grouped and decimal numbers |
 | Release JS bundle | Passed locally with Metro (production Windows bundle and logo asset) |
-| Windows native build and installer | Passed on Windows Server 2022 in [run 41148850823](https://github.com/0xMasharipov/RoClick/actions/runs/41148850823), code commit `80636e9` |
+| Windows native build and installer | Passed on Windows Server 2022 in [run 41149902615](https://github.com/0xMasharipov/RoClick/actions/runs/41149902615), main commit `31c3587`; original installer published as [v1.0.0](https://github.com/0xMasharipov/RoClick/releases/tag/v1.0.0) |
 | Installation / bundled launch / reinstall / uninstall | Passed in the same run; downloaded `smoke-install.json` confirms all four checks |
 | Clean Windows 10 and 11 without developer tools | Pending; a hosted build runner does not prove this |
 | English/Turkish native light/dark screenshots | All four captured, visually reviewed, and saved in [screenshots/](screenshots/); narrow Turkish and expanded Advanced captures are included |
@@ -57,4 +57,4 @@ Idle acceptance: average **submitted** rate within 5% at each speed; no catch-up
 
 On clean x64 Win10/11 VMs without Node, Python, Visual Studio or preinstalled Windows App SDK: disconnect network, install, launch, close, reinstall and uninstall. Verify shortcuts, correct per-user files, no development server/runtime download, and no unexpected UAC. Upgrade from the previous Inno candidate with a lower version and verify replacement/uninstall. Old published releases are portable; verify they remain available and untouched, not silently migrated/deleted.
 
-`scripts/smoke-install.ps1` checks installed UI controls through UI Automation (a process existing is insufficient), captures real screenshots, reinstalls and uninstalls. CI smoke runs on Windows Server and does not substitute for Win10/11 or a clean machine. Review captures before adding them to `docs/screenshots/`. A same-version reinstall is not a version-upgrade test. Do not publish until all acceptance rows above have recorded evidence.
+`scripts/smoke-install.ps1` checks installed UI controls through UI Automation (a process existing is insufficient), captures real screenshots, reinstalls and uninstalls. CI smoke runs on Windows Server and does not substitute for Win10/11 or a clean machine. Review captures before adding them to `docs/screenshots/`. A same-version reinstall is not a version-upgrade test. The published installer does not imply reference-machine acceptance; keep these pending checks explicit in release notes until all rows above have recorded evidence.
