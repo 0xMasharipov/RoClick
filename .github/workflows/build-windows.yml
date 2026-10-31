@@ -3,7 +3,7 @@ name: Build Windows installer
 on:
   workflow_dispatch:
   push:
-    branches: [main, 'codex/native-windows*']
+    branches: [main, 'feature/native-windows*']
   pull_request:
 
 permissions:
