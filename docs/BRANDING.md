@@ -13,6 +13,14 @@ The blue rounded-square R remains the app identity. The refreshed mark uses a cy
 
 The icon was edited directly as SVG, exported with `rsvg-convert`, and packaged as ICO using Pillow. The banner was made with the built-in image generation tool using the updated PNG logo as its brand reference.
 
-## Banner prompt
+## Character artwork and localized UI
 
-> Create a polished wide GitHub README banner for RoClick, a local Windows auto-clicker. Use the attached blue rounded-square R app logo as an EXACT brand reference: white bold R, cyan click dot and upper-right quarter arc. Composition: wide landscape 2.5:1 editorial software brand cover, dark ink navy #101722 background, very subtle blue light, generous negative space. Left side typographic hierarchy with exact large text 'RoClick', smaller line 'On your desktop. Under your control.', and small supporting line 'A local auto-clicker for Windows'. Right side: one large refined version of the supplied app icon on a subtle dark rounded tile, crisp, mostly flat with restrained dimensional depth, thin cyan click ripples extending behind it. Typography is clean modern sans-serif, white and cool blue. Mature, precise Windows utility identity. No fake app UI, no statistics, no speed claims, no badges, no extra text, no photos. All copy fully legible within safe margins. This is a banner illustration, not a screenshot. Final image is intended for the repository README.
+- `assets/reference/banner-reference.jpg`: supplied 474 × 266 character reference.
+- `assets/gaming-header.png`: text-free AI extension for the native app header. Native text overlays translate immediately.
+- `docs/images/roclick-banner.png`: matching character-led README banner.
+- `assets/reference/generation-prompts.json`: exact prompts and generation method (built-in imagegen).
+- `docs/images/roclick-showcase.svg` and `.png`: presentation sheet assembled from the four actual installed-app captures.
+
+The R app icon remains unchanged by the character-art refresh. The app uses navy dark surfaces, light neutral surfaces, cyan actions, and restrained red in the artwork and error state. High contrast hides the decorative image and uses Windows system colors.
+
+Run `python3 scripts/create-showcase.py` after replacing the four screenshots to regenerate the showcase. This documentation tool requires `rsvg-convert`; it adds no dependency to the installed app.

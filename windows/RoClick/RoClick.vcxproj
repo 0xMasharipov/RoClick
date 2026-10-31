@@ -92,6 +92,8 @@
   <ItemGroup>
     <ClInclude Include="RoClick.h" />
     <ClInclude Include="ClickEngineModule.h" />
+    <ClInclude Include="AppSettingsModule.h" />
+    <ClInclude Include="AppLanguage.h" />
     <ClInclude Include="WindowAppearance.h" />
     <ClInclude Include="..\..\native\windows\Runtime.h" />
     <ClInclude Include="..\..\native\core\Engine.h" />

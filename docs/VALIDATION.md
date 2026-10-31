@@ -8,13 +8,18 @@
 | --- | --- |
 | Portable engine tests | Passed locally with GCC; simulated 60-second schedules, cancellation, configuration, partial failures, focus, destruction and capture |
 | TypeScript | Passed locally |
+| English/Turkish dictionaries and formatting | Passed locally: matching keys/placeholders, all native error identifiers, Turkish glyphs, grouped and decimal numbers |
 | Release JS bundle | Passed locally with Metro (production Windows bundle and logo asset) |
-| Windows native build and installer | Passed on Windows Server 2022 in [run 41144360233](https://github.com/0xMasharipov/RoClick/actions/runs/41144360233), code commit `b78324d` |
+| Windows native build and installer | Passed on Windows Server 2022 in [run 41148850823](https://github.com/0xMasharipov/RoClick/actions/runs/41148850823), code commit `80636e9` |
 | Installation / bundled launch / reinstall / uninstall | Passed in the same run; downloaded `smoke-install.json` confirms all four checks |
 | Clean Windows 10 and 11 without developer tools | Pending; a hosted build runner does not prove this |
-| Native light/dark screenshots | Captured in the same run, visually reviewed, and saved in [screenshots/](screenshots/); smoke test also verifies that opening Advanced does not produce an unedited press-duration validation message |
+| English/Turkish native light/dark screenshots | All four captured, visually reviewed, and saved in [screenshots/](screenshots/); narrow Turkish and expanded Advanced captures are included |
+| Language persistence and live switching | Passed: Turkish survives app restart; switching keeps interval/button settings and a paused native session |
+| Native errors and input validation | Passed: native capture errors and invalid numeric-input messages translate immediately; unedited fields do not produce spurious validation |
+| Showcase sheet | PNG and editable SVG assembled from the actual four installed-app screenshots |
+| High contrast, physical hotkeys, multi-DPI and clean Win10/11 review | Reference-machine acceptance remains pending |
 
-Downloaded installer and benchmark SHA-256 checksums both match `dist/SHA256SUMS.txt` from this run. The reviewed screenshots show the top of the scrollable window at the runner's available desktop size.
+Downloaded installer and benchmark SHA-256 checksums both match `dist/SHA256SUMS.txt` from this run. The four main screenshots show the top of the scrollable window at the runner's available desktop size. The narrow capture uses a 360 px outer window; the Advanced capture intentionally scrolls to the expanded controls. CI uses injected keyboard input for numeric editing; native hotkeys intentionally ignore injected keys, so this does not prove physical hotkey acceptance.
 
 ## Performance protocol
 

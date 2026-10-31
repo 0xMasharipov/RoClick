@@ -30,6 +30,23 @@ struct Platform {
   // pair=true means one ordered SendInput([down, up]), never multiple clicks.
   virtual Submission Input(Button button, bool down, bool pair) = 0;
 };
+enum class ErrorKind { None, InvalidConfig, TargetClosed, CaptureFailed, InputRejected,
+  ReleaseRejected, TargetMissing, MonitoringUnavailable, TimerUnavailable, SchedulerWaitFailed };
+inline const char *ErrorKey(ErrorKind kind) {
+  switch (kind) {
+    case ErrorKind::None: return "";
+    case ErrorKind::InvalidConfig: return "invalidConfig";
+    case ErrorKind::TargetClosed: return "targetClosed";
+    case ErrorKind::CaptureFailed: return "captureFailed";
+    case ErrorKind::InputRejected: return "inputRejected";
+    case ErrorKind::ReleaseRejected: return "releaseRejected";
+    case ErrorKind::TargetMissing: return "targetMissing";
+    case ErrorKind::MonitoringUnavailable: return "monitoringUnavailable";
+    case ErrorKind::TimerUnavailable: return "timerUnavailable";
+    case ErrorKind::SchedulerWaitFailed: return "schedulerWaitFailed";
+  }
+  return "";
+}
 struct Snapshot {
   Config config;
   State state = State::Stopped;
@@ -39,6 +56,7 @@ struct Snapshot {
   Time started = 0, ended = 0;
   uint32_t errorCode = 0;
   std::string error;
+  ErrorKind errorKind = ErrorKind::None;
   bool held = false;
 };
 
@@ -50,7 +68,7 @@ class Engine {
   const Snapshot &Get() const { return s_; }
   bool Active() const { return s_.state == State::Running || s_.state == State::Paused; }
   void Configure(Config c) {
-    if (!Valid(c)) { Fail("Use an integer interval of 1–1000 ms and a press duration below the interval."); return; }
+    if (!Valid(c)) { Fail(ErrorKind::InvalidConfig, "Use an integer interval of 1–1000 ms and a press duration below the interval."); return; }
     const bool resume = Active();
     if (!Release()) return;
     s_.config = c;
@@ -61,7 +79,7 @@ class Engine {
   void Start() {
     if (Active() || s_.state == State::Capturing) return;
     if (!Release()) return;
-    if (recaptureRequired_) { Fail("The captured window closed. Capture a target again before starting."); return; }
+    if (recaptureRequired_) { Fail(ErrorKind::TargetClosed, "The captured window closed. Capture a target again before starting."); return; }
     const auto config = s_.config;
     s_ = Snapshot{};
     s_.config = config;
@@ -80,26 +98,26 @@ class Engine {
   void CaptureAfter(int delayMs) {
     Stop();
     if (s_.held) return;
-    s_.error.clear(); s_.errorCode = 0;
+    s_.error.clear(); s_.errorCode = 0; s_.errorKind = ErrorKind::None;
     p_.ClearTarget();
     captureAt_ = p_.Now() + std::clamp(delayMs, 500, 10000) * Millisecond;
     s_.state = State::Capturing;
   }
   void ClearTarget() { Stop(); p_.ClearTarget(); }
-  void ExternalFailure(std::string message, uint32_t code = 0) { Fail(std::move(message), code); }
+  void ExternalFailure(ErrorKind kind, std::string message, uint32_t code = 0) { Fail(kind, std::move(message), code); }
   void Tick() {
     auto now = p_.Now();
     if (s_.state == State::Capturing) {
       if (now >= captureAt_) {
         if (p_.Capture()) { s_.state = State::Stopped; recaptureRequired_ = false; }
-        else Fail("Could not capture this window. Focus another desktop application and capture again.");
+        else Fail(ErrorKind::CaptureFailed, "Could not capture this window. Focus another desktop application and capture again.");
       }
       return;
     }
     // Detect target destruction even while stopped or unlocked.
     if (p_.Target() == TargetState::Destroyed) {
       recaptureRequired_ = true;
-      p_.ClearTarget(); Fail("The captured window closed. Capture a target again before starting."); return;
+      p_.ClearTarget(); Fail(ErrorKind::TargetClosed, "The captured window closed. Capture a target again before starting."); return;
     }
     if (!Active()) return;
     if (!CheckTarget()) return;
@@ -127,7 +145,7 @@ class Engine {
     s_.held = sent.count == 1;
     heldButton_ = s_.config.button;
     if (sent.count != (pair ? 2u : 1u)) {
-      Fail("Windows rejected mouse input. Stop, check the target's permissions or input restrictions, and retry. RoClick does not elevate automatically.", sent.error);
+      Fail(ErrorKind::InputRejected, "Windows rejected mouse input. Stop, check the target's permissions or input restrictions, and retry. RoClick does not elevate automatically.", sent.error);
       return;
     }
     if (pair) { Complete(p_.Now()); Advance(p_.Now()); }
@@ -147,24 +165,25 @@ class Engine {
     s_.inputEvents += result.count;
     if (result.count == 1) { s_.held = false; return true; }
     ++s_.failures; s_.errorCode = result.error;
+    s_.errorKind = ErrorKind::ReleaseRejected;
     s_.error = "Windows rejected a button release. Release the physical mouse button, check desktop/target permissions, then Stop to retry the release.";
     s_.state = State::Error; s_.ended = p_.Now();
     return false; // Keep held=true so Stop/shutdown retry; never start another down.
   }
-  void Fail(std::string message, uint32_t code = 0) {
+  void Fail(ErrorKind kind, std::string message, uint32_t code = 0) {
     ++s_.failures;
     if (!Release()) return;
-    s_.error = std::move(message); s_.errorCode = code;
+    s_.error = std::move(message); s_.errorCode = code; s_.errorKind = kind;
     s_.state = State::Error; s_.ended = p_.Now(); captureAt_ = 0;
   }
   bool CheckTarget() {
     const auto target = p_.Target();
     if (target == TargetState::Destroyed) {
       recaptureRequired_ = true;
-      p_.ClearTarget(); Fail("The captured window closed. Capture a target again before starting."); return false;
+      p_.ClearTarget(); Fail(ErrorKind::TargetClosed, "The captured window closed. Capture a target again before starting."); return false;
     }
     if (!s_.config.lockToTarget) return true;
-    if (target == TargetState::Missing) { Fail("Capture a target first, or turn off target focus lock in Advanced."); return false; }
+    if (target == TargetState::Missing) { Fail(ErrorKind::TargetMissing, "Capture a target first, or turn off target focus lock in Advanced."); return false; }
     if (target == TargetState::Background) {
       if (!Release()) return false;
       s_.state = State::Paused;

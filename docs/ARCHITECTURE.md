@@ -22,9 +22,19 @@ SendInput operates at the pointer position. This is not background-window inject
 
 ## UI and packaging
 
-The original logo is used in the header, executable, title bar and installer. Opaque panels keep text readable. Documented DWM `DWMSBT_TRANSIENTWINDOW` requests Desktop Acrylic on Windows 11 build 22621+; unsupported OS/API results, disabled transparency, high contrast and remote sessions select solid fills. Appearance changes are handled natively. React uses system high-contrast colors, labels, focus indicators, scalable layout and no animation (therefore no reduced-motion exception).
+The refreshed RoClick logo is used in the header, executable, title bar and installer. Opaque panels keep text readable. Documented DWM `DWMSBT_TRANSIENTWINDOW` requests Desktop Acrylic on Windows 11 build 22621+; unsupported OS/API results, disabled transparency, high contrast and remote sessions select solid fills. Appearance changes are handled natively. React uses system high-contrast colors, labels, focus indicators, scalable layout and no animation (therefore no reduced-motion exception).
 
 The installer contains the generated JS bundle/assets, self-contained Windows App SDK files, RN/Hermes libraries and app-local redistributable MSVC CRT files. The Windows 10 OS supplies UCRT. Nothing downloads at app launch/install. The app and installer run per user and do not change process integrity. There are no telemetry/update/network features in the product. Developer Metro support is disabled for Release.
+
+## Localization and preferences
+
+`AppSettings` is a separate TurboModule from `ClickEngine`. `getLanguage()` resolves `en` or `tr` from a valid `HKCU\Software\RoClick\Language` override, otherwise from the first Windows preferred UI language (Turkish or English fallback). `setLanguage()` saves the explicit choice for the current user. No preferences I/O runs on the scheduler worker. Native startup dialogs use the same language resolver.
+
+React waits for the initial language before rendering controls. Runtime switches update the existing component tree, preserving configuration, input drafts, target and engine state. Save failures leave the session language usable and show a translated warning. English and Turkish dictionaries have matching typed keys and placeholders. Numeric formatting is explicit because this Windows Hermes configuration does not reliably support locale-aware formatting.
+
+Native `Snapshot.errorKind` maps to a stable `EngineEvent.errorKey`; Windows `errorCode` and English diagnostic text remain available. The React UI translates error keys, including missing targets, capture failures, rejected input/releases, and monitoring/timer/wait failures. Presentation language never enters the scheduler state machine.
+
+The generated character artwork is bundled locally. App-header text is rendered by React so it translates; high contrast hides the decorative image. Documentation showcase graphics lay out actual installed-app PNGs without redrawing their contents.
 
 ## Primary references
 

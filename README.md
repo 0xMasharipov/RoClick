@@ -1,10 +1,10 @@
-![RoClick — On your desktop. Under your control.](docs/images/roclick-banner.png)
+![RoClick — Your pace. Your control.](docs/images/roclick-banner.png)
 
 # RoClick
 
 A local auto-clicker for **x64 Windows 10 22H2 and Windows 11**. Set your pace, capture a target window, and start or stop with a keyboard shortcut. A React Native Windows interface sits over a dedicated C++ input engine.
 
-The installed app works offline with its runtimes bundled. No Python or development server is required. No telemetry or automatic updates.
+The app supports **English and Türkçe** with an instant, remembered language switch. The installed app works offline with its runtimes bundled. No Python or development server is required. No telemetry or automatic updates.
 
 [Get a candidate build](https://github.com/0xMasharipov/RoClick/actions/workflows/build-windows.yml) · [Screenshots](#screenshots) · [Build from source](#build-on-windows) · [Validation](docs/VALIDATION.md)
 
@@ -12,11 +12,22 @@ The installed app works offline with its runtimes bundled. No Python or developm
 
 ## Screenshots
 
-| Light | Dark |
-| --- | --- |
-| <img src="docs/screenshots/roclick-light.png" alt="Installed RoClick in light mode with click speed and mouse button controls" width="320"> | <img src="docs/screenshots/roclick-dark.png" alt="Installed RoClick in dark mode with click speed and mouse button controls" width="320"> |
+| Language | Light | Dark |
+| --- | --- | --- |
+| English | <img src="docs/screenshots/roclick-en-light.png" alt="Installed RoClick in English, light mode" width="280"> | <img src="docs/screenshots/roclick-en-dark.png" alt="Installed RoClick in English, dark mode" width="280"> |
+| Türkçe | <img src="docs/screenshots/roclick-tr-light.png" alt="Installed RoClick in Turkish, light mode" width="280"> | <img src="docs/screenshots/roclick-tr-dark.png" alt="Installed RoClick in Turkish, dark mode" width="280"> |
 
-Actual installed-app captures from the [passing Windows installer run](https://github.com/0xMasharipov/RoClick/actions/runs/41144360233) on Windows Server 2022. The window scrolls to reveal more controls at the runner's available desktop size. Windows 10/11 acceptance remains pending.
+[View the showcase sheet](docs/images/roclick-showcase.png) · [Editable showcase](docs/images/roclick-showcase.svg) · [Turkish narrow layout](docs/screenshots/roclick-tr-narrow.png) · [Turkish Advanced settings](docs/screenshots/roclick-tr-advanced.png)
+
+These are actual installed-app captures from Windows CI, not generated interface mockups. The window scrolls to reveal additional controls at the runner's available desktop size. See [validation evidence](docs/VALIDATION.md) for the verified run and outstanding Windows 10/11 acceptance.
+
+## Language
+
+RoClick follows the first Windows preferred UI language on first launch: Turkish for Turkish Windows, English otherwise. Use **English / Türkçe** at the top of the app to switch immediately. Your explicit choice is saved per Windows user and survives restarts and reinstalling.
+
+Controls, native errors, validation, screen-reader labels, and status announcements are localized. Switching languages keeps the current interval, mouse button, captured target, and running/paused state. Displayed numbers follow the language (`1,000.5` / `1.000,5`); interval and press-duration fields still accept ungrouped whole milliseconds.
+
+The installer and this documentation remain in English. To return to automatic Windows-language selection, close RoClick and remove only the `Language` value under `HKEY_CURRENT_USER\Software\RoClick`.
 
 ## Use
 
@@ -70,6 +81,7 @@ For portable validation on Linux/macOS/Windows with a C++17 compiler:
 
 ```sh
 npm run typecheck
+npm run test:localization
 npm run test:native
 ```
 
@@ -77,11 +89,13 @@ The Windows build separately compiles/tests the Win32 runtime. Linux tests use v
 
 ## Design and architecture
 
-Compact, resizable single window with a refreshed RoClick icon, rounded opaque controls, blue accents, system typography, keyboard focus visuals, accessible labels, system high-contrast colors, and a scrolling layout for small windows/display scaling. This is an **iOS-inspired Windows design**.
+Compact, resizable single window with a character-art header, navy surfaces in dark mode, cyan actions, system typography, keyboard focus visuals, and bilingual accessibility labels. Start/Stop and target capture appear before optional settings. Light/Dark/System modes and a scrolling layout support small windows; high contrast uses system colors and hides decorative artwork.
 
 Native DWM Desktop Acrylic is requested on supported Windows 11 builds. Windows 10, unsupported builds, disabled transparency, high contrast, and remote sessions use a solid backdrop. See [architecture and API references](docs/ARCHITECTURE.md).
 
 - `src/App.tsx`: React Native controls and presentation.
+- `src/i18n.ts`: typed English/Turkish dictionaries and deterministic number formatting.
+- `src/native/NativeAppSettings.ts`: native per-user language preference contract.
 - `src/native/NativeClickEngine.ts`: typed TurboModule contract.
 - `native/core/Engine.h`: deterministic scheduling/input state machine.
 - `native/windows/Runtime.*`: dedicated worker, waitable timers, process/handle identity, global keyboard and destruction hooks.
