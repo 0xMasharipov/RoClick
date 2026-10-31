@@ -7,6 +7,7 @@
 [Setup]
 AppId={{30612788-1F58-44DA-8C1A-BC32CE6E8029}
 AppName=RoClick
+AppMutex=Local\RoClick.Application
 AppVersion={#AppVersion}
 AppPublisher=RoClick
 AppPublisherURL=https://github.com/0xMasharipov/RoClick

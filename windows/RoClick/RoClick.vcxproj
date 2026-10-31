@@ -73,7 +73,7 @@
       </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>shell32.lib;user32.lib;windowsapp.lib;dwmapi.lib;comctl32.lib;advapi32.lib;pathcch.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shell32.lib;user32.lib;windowsapp.lib;dwmapi.lib;comctl32.lib;advapi32.lib;pathcch.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
@@ -96,7 +96,9 @@
     <ClInclude Include="AppLanguage.h" />
     <ClInclude Include="WindowAppearance.h" />
     <ClInclude Include="..\..\native\windows\Runtime.h" />
+    <ClInclude Include="..\..\native\windows\UpdateService.h" />
     <ClInclude Include="..\..\native\core\Engine.h" />
+    <ClInclude Include="..\..\native\core\RobloxTarget.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="AutolinkedNativeModules.g.h" />
     <ClInclude Include="pch.h" />
@@ -106,6 +108,7 @@
     <ClCompile Include="RoClick.cpp" />
     <ClCompile Include="WindowAppearance.cpp" />
     <ClCompile Include="..\..\native\windows\Runtime.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="..\..\native\windows\UpdateService.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="AutolinkedNativeModules.g.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

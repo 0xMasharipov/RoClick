@@ -10,6 +10,7 @@
 #include "ClickEngineModule.h"
 #include "AppSettingsModule.h"
 #include "WindowAppearance.h"
+#include <stdexcept>
 
 // A PackageProvider containing any turbo modules you define within this app project
 struct CompReactPackageProvider
@@ -22,6 +23,23 @@ struct CompReactPackageProvider
 
 // The entry point of the Win32 application
 static int RunApp() {
+  // The installer checks this from the beginning of startup, including while
+  // React Native is loading. Multiple app windows retain their own handles.
+  struct ApplicationLifetime {
+    HANDLE mutex = nullptr;
+    ApplicationLifetime() {
+      HANDLE gate = CreateMutexW(nullptr, FALSE, L"Local\\RoClick.Installation");
+      if (!gate) throw std::runtime_error("Could not open the installation gate.");
+      const auto result = WaitForSingleObject(gate, INFINITE);
+      if (result == WAIT_OBJECT_0 || result == WAIT_ABANDONED) {
+        mutex = CreateMutexW(nullptr, FALSE, L"Local\\RoClick.Application");
+        ReleaseMutex(gate);
+      }
+      CloseHandle(gate);
+      if (!mutex) throw std::runtime_error("Could not register the application instance.");
+    }
+    ~ApplicationLifetime() { if (mutex) CloseHandle(mutex); }
+  } application;
   // Initialize WinRT
   winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -91,6 +109,9 @@ static int RunApp() {
     roclick::Runtime &engine;
     ~EngineLifetime() { engine.Shutdown(); }
   } lifetime{engine};
+#if BUNDLE && !defined(_DEBUG)
+  roclick::UpdateService::Shared().Initialize();
+#endif
 
   // Get the ReactViewOptions so we can set the initial RN component to load
   auto viewOptions{reactNativeWin32App.ReactViewOptions()};

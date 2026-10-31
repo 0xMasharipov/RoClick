@@ -3,7 +3,7 @@ import {Image, PanResponder, Pressable, ScrollView, StyleSheet, Switch, Text,
   TextInput, View, type StyleProp, type ViewStyle} from 'react-native';
 import type {} from 'react-native-windows';
 import Engine, {type ClickConfig, type EngineState, type Theme} from './native/NativeClickEngine';
-import AppSettings, {type Locale} from './native/NativeAppSettings';
+import AppSettings, {type Locale, type UpdateState} from './native/NativeAppSettings';
 import {translate, formatNumber, formatRate, type MessageKey} from './i18n';
 
 const defaults: ClickConfig = {intervalMs: 10, pressMs: 0, button: 'left', lockToTarget: true};
@@ -95,6 +95,24 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
   const [advanced, setAdvanced] = useState(false);
   const [heroWidth, setHeroWidth] = useState(360);
   const [theme, setTheme] = useState<Theme>('system');
+  const [updates, setUpdates] = useState<UpdateState>();
+  const [updateSaving, setUpdateSaving] = useState(false);
+  const [updateSaveFailed, setUpdateSaveFailed] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    const refresh = () => AppSettings.getUpdateState().then(value => { if (mounted) setUpdates(value); }).catch(() => {});
+    void refresh();
+    const timer = setInterval(refresh, 3000);
+    return () => { mounted = false; clearInterval(timer); };
+  }, []);
+  const changeUpdates = async (enabled: boolean) => {
+    setUpdateSaving(true); setUpdateSaveFailed(false);
+    try {
+      await AppSettings.setAutomaticUpdates(enabled);
+      setUpdates(await AppSettings.getUpdateState());
+    } catch { setUpdateSaveFailed(true); }
+    finally { setUpdateSaving(false); }
+  };
   useEffect(() => {
     const subscription = Engine.onState(next => { setState(next); Engine.acknowledge(); });
     Engine.observe(true);
@@ -173,7 +191,7 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
         <View style={styles.captureRow}>
           <Text style={[styles.small, styles.grow, {color: colors.secondary}]}>{state?.targetPid ? t('process', {pid: state.targetPid}) : t('captureDelay')}</Text>
           <Action id="capture" label={t(capturing ? 'cancelCapture' : state?.targetPid ? 'recapture' : 'capture')} colors={colors}
-            onPress={() => capturing ? Engine.stop() : Engine.captureTarget(2000)} style={styles.captureAction} />
+            onPress={() => capturing ? Engine.stop() : Engine.captureTarget(0)} style={styles.captureAction} />
         </View>
         {!!state?.targetPid && <Text style={[styles.hint, {color: colors.secondary}]}>{t(config.lockToTarget ? 'focusPause' : 'focusOff')}</Text>}
       </View>
@@ -181,6 +199,10 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
     {!!state?.error && <View style={[styles.error, {backgroundColor: colors.panel, borderColor: colors.danger}]}>
       <Text testID="engine-error" accessibilityRole="alert" accessibilityLiveRegion="assertive" selectable style={{color: colors.danger}}>{t(errorKey)}{state.errorCode ? ` (${t('windowsCode', {code: state.errorCode})})` : ''}</Text>
     </View>}
+    {updates?.enabled && (updates.state === 'downloading' || updates.state === 'ready') &&
+      <View style={panel}><Text testID="update-notice" accessibilityLiveRegion="polite" style={{color: colors.text}}>
+        {t(`update_${updates.state}`, {version: updates.availableVersion})}
+      </Text></View>}
     <View style={panel}>
       <View style={styles.row}>
         <View style={styles.grow}><Text style={[styles.label, {color: colors.text}]}>{t('speed')}</Text>
@@ -227,6 +249,17 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
         <Text style={[styles.hint, {color: colors.secondary}]}>{t('diagnostics', {skipped: formatNumber(state?.skipped ?? 0, locale), failures: formatNumber(state?.failures ?? 0, locale)})}</Text>
         <Text style={[styles.hint, {color: colors.secondary}]}>{t('shortcutHint')}</Text>
         <Text style={[styles.hint, {color: colors.secondary}]}>{t('performance')}</Text>
+        <View style={[styles.row, styles.sectionGap]}>
+          <Text style={[styles.grow, {color: colors.text}]}>{t('automaticUpdates')}</Text>
+          <Switch testID="automatic-updates" accessibilityLabel={t('automaticUpdates')} value={updates?.enabled ?? true}
+            disabled={!updates || updateSaving} onValueChange={enabled => { void changeUpdates(enabled); }} />
+        </View>
+        <Text testID="update-status" accessibilityLiveRegion="polite" style={[styles.hint, {color: colors.secondary}]}>
+          {t(`update_${updates?.state ?? 'checking'}`, {version: updates?.availableVersion ?? ''})}
+        </Text>
+        {!!updates?.version && <Text style={[styles.hint, {color: colors.secondary}]}>{t('appVersion', {version: updates.version})}</Text>}
+        <Text style={[styles.hint, {color: colors.secondary}]}>{t('updateHint')}</Text>
+        {updateSaveFailed && <Text accessibilityRole="alert" style={{color: colors.danger}}>{t('updateSaveFailed')}</Text>}
       </View>}
     </View>
     <Text style={[styles.footer, {color: state?.highContrast ? state.textColor : colors.secondary}]}>{t('footer')}</Text>

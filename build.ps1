@@ -11,6 +11,7 @@ try {
   if (-not $SkipInstall) { Invoke-Checked 'npm.cmd' @('ci', '--no-audit', '--no-fund') }
   Invoke-Checked 'npm.cmd' @('run', 'typecheck')
   Invoke-Checked 'npm.cmd' @('run', 'test:localization')
+  Invoke-Checked 'powershell.exe' @('-NoProfile', '-NonInteractive', '-File', 'scripts/test-updates.ps1')
   Invoke-Checked 'cmake.exe' @('-S','native','-B','build/native','-A','x64')
   Invoke-Checked 'cmake.exe' @('--build','build/native','--config','Release')
   Invoke-Checked 'ctest.exe' @('--test-dir','build/native','-C','Release','--output-on-failure')
@@ -38,6 +39,10 @@ try {
   Copy-Item 'windows/RoClick/Bundle' $stage -Recurse -Force
   Copy-Item 'assets/roclick.ico' $stage
   Copy-Item 'LICENSE' $stage
+  Copy-Item 'scripts/update.ps1' $stage
+  $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+  if ($version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') { throw 'Use a stable x.y.z package version.' }
+  $version | Set-Content (Join-Path $stage 'version.txt') -Encoding ascii
   # App-local MSVC runtime: offline install, no runtime download or UAC needed.
   $runtime = Get-ChildItem (Join-Path $vs 'VC\Redist\MSVC') -Recurse -File -Filter 'vcruntime140.dll' |
     Where-Object { $_.FullName -match '\\x64\\Microsoft\.VC[^\\]+\.CRT\\' } |
@@ -45,12 +50,11 @@ try {
   if (-not $runtime) { throw 'MSVC x64 redistributable files are missing.' }
   $crt = $runtime.DirectoryName
   Copy-Item "$crt\*.dll" $stage -Force
-  foreach ($required in @('RoClick.exe','Microsoft.ReactNative.dll','Microsoft.UI.Xaml.dll','vcruntime140.dll','msvcp140.dll','Bundle/index.windows.bundle')) {
+  foreach ($required in @('RoClick.exe','Microsoft.ReactNative.dll','Microsoft.UI.Xaml.dll','vcruntime140.dll','msvcp140.dll','Bundle/index.windows.bundle','update.ps1','version.txt')) {
     if (-not (Test-Path (Join-Path $stage $required))) { throw "Incomplete runtime payload: $required" }
   }
   $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
   if (-not (Test-Path $iscc)) { throw 'Install Inno Setup 6 before building the installer.' }
-  $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
   Invoke-Checked $iscc @("/DAppVersion=$version", "/DSourceDir=$stage", 'installer/RoClick.iss')
   Copy-Item 'build/native/Release/roclick_benchmark.exe' 'dist/'
   @('RoClick-Setup.exe','roclick_benchmark.exe') | ForEach-Object {

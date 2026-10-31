@@ -1,4 +1,6 @@
 #include "Runtime.h"
+#include "../core/RobloxTarget.h"
+#include <iterator>
 #include <stdexcept>
 #include <utility>
 
@@ -12,7 +14,7 @@ Time Runtime::Clock() {
   return (value.QuadPart / frequency) * 1'000'000'000 +
     (value.QuadPart % frequency) * 1'000'000'000 / frequency;
 }
-Runtime::Runtime(bool installHotkeys) {
+Runtime::Runtime(bool installHotkeys, TargetMode targetMode) : targetMode_(targetMode) {
   wake_ = CreateEventW(nullptr, FALSE, FALSE, nullptr);
   hooksReady_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
   timer_ = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
@@ -89,21 +91,31 @@ void Runtime::Work() {
       switch (c.op) {
         case Op::Configure: engine_.Configure(c.config); break;
         case Op::Start:
-          if (monitoring_) engine_.Start();
+          if (monitoring_) {
+            if (targetMode_ == TargetMode::Roblox) { autoDetect_ = true; engine_.TryCaptureTarget(); }
+            engine_.Start();
+          }
           else engine_.ExternalFailure(ErrorKind::MonitoringUnavailable, "Native input monitoring is unavailable. Restart RoClick on the interactive desktop.");
           break;
         case Op::Stop: engine_.Stop(); break;
         case Op::Toggle:
           if (engine_.Active()) engine_.Stop();
-          else if (monitoring_) engine_.Start();
+          else if (monitoring_) {
+            if (targetMode_ == TargetMode::Roblox) { autoDetect_ = true; engine_.TryCaptureTarget(); }
+            engine_.Start();
+          }
           else engine_.ExternalFailure(ErrorKind::MonitoringUnavailable, "Native input monitoring is unavailable. Restart RoClick on the interactive desktop.");
           break;
-        case Op::Capture: engine_.CaptureAfter(c.delay); break;
-        case Op::Clear: engine_.ClearTarget(); break;
+        case Op::Capture: autoDetect_ = true; engine_.CaptureAfter(c.delay); break;
+        case Op::Clear: autoDetect_ = false; engine_.ClearTarget(); break;
         case Op::Error: engine_.ExternalFailure(ErrorKind::MonitoringUnavailable, "Native keyboard/window monitoring could not start. Restart RoClick on the interactive desktop."); break;
       }
     }
     if (!stopRequested_ && !shutdown_) engine_.Tick();
+    if (!stopRequested_ && !shutdown_ && autoDetect_ && targetMode_ == TargetMode::Roblox && !target_ && Clock() >= detectAt_) {
+      detectAt_ = Clock() + 1000 * Millisecond;
+      engine_.TryCaptureTarget();
+    }
     Publish();
     const auto remaining = std::max<Time>(100, engine_.NextWake() - Clock());
     LARGE_INTEGER due{}; due.QuadPart = -((remaining + 99) / 100);
@@ -134,12 +146,28 @@ void Runtime::Publish() {
 }
 bool Runtime::Capture() {
   ClearTarget();
-  HWND window = GetAncestor(GetForegroundWindow(), GA_ROOT);
+  const auto foreground = GetAncestor(GetForegroundWindow(), GA_ROOT);
+  if (CaptureWindow(foreground)) return true;
+  if (targetMode_ == TargetMode::Roblox) EnumWindows(FindRobloxWindow, reinterpret_cast<LPARAM>(this));
+  return target_ != nullptr;
+}
+BOOL CALLBACK Runtime::FindRobloxWindow(HWND window, LPARAM context) {
+  return reinterpret_cast<Runtime *>(context)->CaptureWindow(window) ? FALSE : TRUE;
+}
+bool Runtime::CaptureWindow(HWND window) {
+  if (!window || !IsWindowVisible(window) || GetWindow(window, GW_OWNER)) return false;
   DWORD pid = 0;
   const DWORD thread = GetWindowThreadProcessId(window, &pid);
   if (!window || !thread || pid == GetCurrentProcessId() || window == GetDesktopWindow() || window == GetShellWindow()) return false;
   HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
   if (!process) return false;
+  if (targetMode_ == TargetMode::Roblox) {
+    wchar_t path[32768]{};
+    DWORD length = static_cast<DWORD>(std::size(path));
+    if (!QueryFullProcessImageNameW(process, 0, path, &length) || !IsRobloxPlayer({path, length})) {
+      CloseHandle(process); return false;
+    }
+  }
   FILETIME created{}, exit{}, kernel{}, user{};
   if (!GetProcessTimes(process, &created, &exit, &kernel, &user)) { CloseHandle(process); return false; }
   destroyed_ = false;

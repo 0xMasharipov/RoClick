@@ -100,17 +100,29 @@ class Engine {
     if (s_.held) return;
     s_.error.clear(); s_.errorCode = 0; s_.errorKind = ErrorKind::None;
     p_.ClearTarget();
-    captureAt_ = p_.Now() + std::clamp(delayMs, 500, 10000) * Millisecond;
+    captureAt_ = p_.Now() + std::clamp(delayMs, 0, 10000) * Millisecond;
     s_.state = State::Capturing;
   }
   void ClearTarget() { Stop(); p_.ClearTarget(); }
+  // Idle discovery is silent when the player has not opened yet. It never
+  // starts clicking or clears unrelated errors, especially a failed release.
+  bool TryCaptureTarget() {
+    if (Active() || s_.state == State::Capturing || s_.held) return false;
+    if (s_.errorKind != ErrorKind::None && s_.errorKind != ErrorKind::TargetMissing &&
+        s_.errorKind != ErrorKind::TargetClosed && s_.errorKind != ErrorKind::CaptureFailed) return false;
+    if (p_.Target() != TargetState::Missing || !p_.Capture()) return false;
+    recaptureRequired_ = false;
+    s_.error.clear(); s_.errorCode = 0; s_.errorKind = ErrorKind::None;
+    s_.state = State::Stopped;
+    return true;
+  }
   void ExternalFailure(ErrorKind kind, std::string message, uint32_t code = 0) { Fail(kind, std::move(message), code); }
   void Tick() {
     auto now = p_.Now();
     if (s_.state == State::Capturing) {
       if (now >= captureAt_) {
         if (p_.Capture()) { s_.state = State::Stopped; recaptureRequired_ = false; }
-        else Fail(ErrorKind::CaptureFailed, "Could not capture this window. Focus another desktop application and capture again.");
+        else Fail(ErrorKind::CaptureFailed, "Roblox was not found. Open the Roblox player; RoClick will detect it automatically.");
       }
       return;
     }

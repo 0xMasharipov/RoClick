@@ -101,12 +101,16 @@ $script:app = $null
 $receiver = $null
 $settingsKey = 'HKCU:\Software\RoClick'
 $previousLanguage = (Get-ItemProperty $settingsKey -Name Language -ErrorAction SilentlyContinue).Language
+$previousAutomaticUpdates = Get-ItemPropertyValue $settingsKey -Name AutomaticUpdates -ErrorAction SilentlyContinue
 try {
   Remove-ItemProperty $settingsKey -Name Language -ErrorAction SilentlyContinue
+  # Keep installed-app smoke tests offline and independent of live releases.
+  New-Item $settingsKey -Force | Out-Null
+  Set-ItemProperty $settingsKey -Name AutomaticUpdates -Type DWord -Value 0
   Install-App 'install'
   Start-App
   Click-Control 'language-en'
-  Assert-Name 'capture' 'Capture window'
+  Assert-Name 'capture' 'Find Roblox'
   # Verify edits and validation survive a live locale switch.
   $shell = New-Object -ComObject WScript.Shell
   (Find-Control 'interval-input').SetFocus()
@@ -127,6 +131,11 @@ try {
   Click-Control 'advanced'
   Click-Control 'language-en'
   Assert-Name 'press-input' 'Press duration in milliseconds'
+  Assert-Name 'update-status' 'Automatic updates are off.'
+  $helper = @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object {
+    $_.CommandLine -match ('-ParentProcessId ' + $app.Id + '(?:\s|$)')
+  })
+  if ($helper.Count -ne 1) { throw 'Bundled automatic-update helper did not launch.' }
   if ((Find-Control 'interval-input').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -ne '25') {
     throw 'Language change reset the interval.'
   }
@@ -134,28 +143,33 @@ try {
     throw 'Language change reset the mouse button.'
   }
   Click-Control 'advanced'
-  # An attempted capture of RoClick itself produces a native error to translate.
+  # Unrelated windows must not be selected, even when they are foreground.
+  $receiver = Start-Process notepad.exe -PassThru
+  Start-Sleep -Milliseconds 1000
+  $receiver.Refresh()
+  [CaptureWindow]::SetForegroundWindow($receiver.MainWindowHandle) | Out-Null
   Click-Control 'capture'
-  Start-Sleep -Milliseconds 2500
   if (-not (Find-Control 'engine-error')) { throw 'Expected a native capture error.' }
   Click-Control 'language-tr'
   Assert-Name 'engine-status' 'Durduruldu · işlem gerekiyor'
-  Assert-Name 'engine-error' 'Bu pencere seçilemedi. Başka bir masaüstü uygulamasına geçip yeniden seç.'
-  Click-Control 'capture'
-  Click-Control 'primary-action'
-  # Capture an independent window, then Start while RoClick is foreground:
-  # focus lock must pause before any click can be submitted.
-  $receiver = Start-Process notepad.exe -PassThru
+  Assert-Name 'engine-error' 'Roblox bulunamadı. Roblox oyuncusunu aç; RoClick otomatik olarak algılayacak.'
+  $receiver.CloseMainWindow() | Out-Null
+  $receiver.WaitForExit(5000) | Out-Null
+  # The independent native fixture has the player executable name and a game
+  # title. It must connect automatically while RoClick remains foreground.
+  $receiver = Start-Process (Join-Path $root 'build/native/Release/RobloxPlayerBeta.exe') -ArgumentList '--receiver' -PassThru
+  [CaptureWindow]::SetForegroundWindow($app.MainWindowHandle) | Out-Null
   for ($i=0; $i -lt 40; $i++) {
     $receiver.Refresh()
-    if ($receiver.MainWindowHandle -ne 0) { break }
+    if ($receiver.MainWindowHandle -ne 0 -and (Find-Control 'capture').Current.Name -eq 'Roblox’u yeniden bul') { break }
     Start-Sleep -Milliseconds 250
   }
   if ($receiver.MainWindowHandle -eq 0) { throw 'Receiver window did not open.' }
+  Assert-Name 'capture' 'Roblox’u yeniden bul'
+  Assert-Name 'engine-status' 'Hazır olduğunda başla'
+  # Explicit retries also find the player without switching focus.
   Click-Control 'capture'
-  [CaptureWindow]::SetForegroundWindow($receiver.MainWindowHandle) | Out-Null
-  Start-Sleep -Milliseconds 2500
-  [CaptureWindow]::SetForegroundWindow($app.MainWindowHandle) | Out-Null
+  Assert-Name 'capture' 'Roblox’u yeniden bul'
   Click-Control 'primary-action'
   Assert-Name 'engine-status' 'Duraklatıldı · hedef odakta değil'
   Click-Control 'language-en'
@@ -172,7 +186,7 @@ try {
   Click-Control 'language-tr'
   Close-App
   Start-App
-  Assert-Name 'capture' 'Pencere seç'
+  Assert-Name 'capture' 'Roblox’u bul'
   foreach ($locale in @('en','tr')) {
     Click-Control "language-$locale"
     foreach ($theme in @('light','dark')) {
@@ -206,6 +220,8 @@ try {
   @{install='passed'; bundledLaunch='passed'; reinstall='passed'; uninstall='passed';
     localization='en/tr passed'; languagePersistence='passed'; nativeErrorTranslation='passed';
     pausedLanguageSwitch='passed'; validationLanguageSwitch='passed';
+    automaticRobloxDetection='passed'; unrelatedWindowRejected='passed';
+    bundledUpdateHelper='passed'; automaticUpdatesDisabled='passed';
     cleanMachine='not tested'; versionUpgrade='not tested'; os=[Environment]::OSVersion.VersionString} |
     ConvertTo-Json | Set-Content (Join-Path $artifacts 'smoke-install.json')
 } catch {
@@ -218,4 +234,6 @@ try {
   if ($receiver -and -not $receiver.HasExited) { Stop-Process -Id $receiver.Id -ErrorAction SilentlyContinue }
   if ($previousLanguage) { Set-ItemProperty $settingsKey -Name Language -Value $previousLanguage }
   else { Remove-ItemProperty $settingsKey -Name Language -ErrorAction SilentlyContinue }
+  if ($null -ne $previousAutomaticUpdates) { Set-ItemProperty $settingsKey -Name AutomaticUpdates -Type DWord -Value $previousAutomaticUpdates }
+  else { Remove-ItemProperty $settingsKey -Name AutomaticUpdates -ErrorAction SilentlyContinue }
 }

@@ -20,8 +20,9 @@ struct RuntimeSnapshot {
 };
 class Runtime final : private Platform {
  public:
+  enum class TargetMode { Roblox, Foreground };
   static Runtime &Shared();
-  explicit Runtime(bool installHotkeys = true);
+  explicit Runtime(bool installHotkeys = true, TargetMode targetMode = TargetMode::Roblox);
   ~Runtime();
   Runtime(const Runtime &) = delete;
   Runtime &operator=(const Runtime &) = delete;
@@ -46,6 +47,8 @@ class Runtime final : private Platform {
   Time Now() override { return Clock(); }
   TargetState Target() override;
   bool Capture() override;
+  bool CaptureWindow(HWND window);
+  static BOOL CALLBACK FindRobloxWindow(HWND window, LPARAM context);
   void ClearTarget() override;
   Submission Input(Button button, bool down, bool pair) override;
   Engine engine_{*this};
@@ -66,6 +69,9 @@ class Runtime final : private Platform {
   FILETIME created_{};
   std::wstring title_;
   bool highResolution_ = false;
+  const TargetMode targetMode_;
+  bool autoDetect_ = true;
+  Time detectAt_ = 0;
   Time rateAt_ = 0;
   uint64_t rateClicks_ = 0;
   double rate_ = 0, stopLatency_ = 0;

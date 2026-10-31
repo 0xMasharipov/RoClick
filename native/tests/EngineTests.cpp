@@ -1,4 +1,5 @@
 #include "Engine.h"
+#include "RobloxTarget.h"
 #include <cstdlib>
 #include <deque>
 #include <iostream>
@@ -9,12 +10,14 @@ struct Fake : Platform {
   Time time = 0;
   TargetState target = TargetState::Focused;
   bool captureOK = true;
+  TargetState captureState = TargetState::Focused;
+  int captures = 0;
   std::deque<Submission> results;
   struct Call { Button button; bool down, pair; Time time; };
   std::vector<Call> calls;
   Time Now() override { return time; }
   TargetState Target() override { return target; }
-  bool Capture() override { target = captureOK ? TargetState::Focused : TargetState::Missing; return captureOK; }
+  bool Capture() override { ++captures; target = captureOK ? captureState : TargetState::Missing; return captureOK; }
   void ClearTarget() override { target = TargetState::Missing; }
   Submission Input(Button b, bool d, bool p) override {
     calls.push_back({b,d,p,time});
@@ -24,6 +27,30 @@ struct Fake : Platform {
   void At(int ms, Engine &e) { time = ms * Millisecond; e.Tick(); }
 };
 int main() {
+  CHECK(IsRobloxPlayer(L"C:\\Users\\Player\\RobloxPlayerBeta.exe"));
+  CHECK(IsRobloxPlayer(L"C:/Roblox/ROBLOXPLAYER.EXE"));
+  CHECK(IsRobloxPlayer(L"Windows10Universal.exe"));
+  for (const auto path : {L"", L"chrome.exe", L"RobloxPlayerLauncher.exe", L"RobloxStudioBeta.exe",
+      L"FakeRobloxPlayerBeta.exe", L"RobloxPlayerBeta.exe.bak", L"C:\\RobloxPlayerBeta.exe\\other.exe"}) CHECK(!IsRobloxPlayer(path));
+  { Fake p; Engine e(p); p.target=TargetState::Missing; p.captureOK=false;
+    CHECK(!e.TryCaptureTarget()); CHECK(e.Get().state==State::Stopped); CHECK(e.Get().failures==0);
+    p.captureOK=true; p.captureState=TargetState::Background;
+    CHECK(e.TryCaptureTarget()); CHECK(e.Get().state==State::Stopped); CHECK(p.calls.empty());
+    e.Start(); CHECK(e.Get().state==State::Paused); CHECK(p.calls.empty());
+    CHECK(!e.TryCaptureTarget()); CHECK(p.captures==2); }
+  { Fake p; Engine e(p); e.Start(); p.target=TargetState::Destroyed; e.Tick();
+    CHECK(e.Get().errorKind==ErrorKind::TargetClosed);
+    CHECK(e.TryCaptureTarget()); CHECK(e.Get().errorKind==ErrorKind::None); CHECK(e.Get().state==State::Stopped);
+    CHECK(p.calls.empty()); e.Start(); CHECK(e.Get().state==State::Running); }
+  { Fake p; Engine e(p); p.target=TargetState::Missing; e.CaptureAfter(0); e.Tick();
+    CHECK(e.Get().state==State::Stopped); CHECK(p.target==TargetState::Focused); CHECK(p.calls.empty()); }
+  { Fake p; Engine e(p); e.CaptureAfter(500);
+    CHECK(!e.TryCaptureTarget()); CHECK(p.captures==0); }
+  for (auto kind : {ErrorKind::InputRejected, ErrorKind::ReleaseRejected, ErrorKind::InvalidConfig,
+      ErrorKind::MonitoringUnavailable, ErrorKind::TimerUnavailable, ErrorKind::SchedulerWaitFailed}) {
+    Fake p; Engine e(p); p.target=TargetState::Missing; e.ExternalFailure(kind,"preserve",5);
+    CHECK(!e.TryCaptureTarget()); CHECK(p.captures==0); CHECK(e.Get().errorKind==kind); CHECK(e.Get().errorCode==5);
+  }
   CHECK(Valid({1,0,Button::Left,true})); CHECK(Valid({1000,999,Button::Middle,false}));
   CHECK(!Valid({0,0,Button::Left,true})); CHECK(!Valid({1001,0,Button::Left,true}));
   CHECK(!Valid({10,10,Button::Left,true})); CHECK(!Valid({10,-1,Button::Left,true}));

@@ -2,9 +2,9 @@
 
 # RoClick
 
-A local auto-clicker for **x64 Windows 10 22H2 and Windows 11**. Set your pace, capture a target window, and start or stop with a keyboard shortcut. A React Native Windows interface sits over a dedicated C++ input engine.
+A local auto-clicker for **x64 Windows 10 22H2 and Windows 11**. Set your pace, let RoClick find your Roblox window automatically, and start or stop with a keyboard shortcut. A React Native Windows interface sits over a dedicated C++ input engine.
 
-The app supports **English and Türkçe** with an instant, remembered language switch. The installed app works offline with its runtimes bundled. No Python or development server is required. No telemetry or automatic updates.
+The app supports **English and Türkçe** with an instant, remembered language switch. The installed app works offline with its runtimes bundled. No Python or development server is required. Automatic updates check GitHub in the background; there is no telemetry.
 
 [**Download RoClick for Windows (.exe)**](https://github.com/0xMasharipov/RoClick/releases/latest/download/RoClick-Setup.exe)
 
@@ -37,9 +37,9 @@ The installer and this documentation remain in English. To return to automatic W
 
 1. Set an interval from **1–1,000 ms** (default **10 ms**, equivalent to 100 clicks/sec).
 2. Select Left, Right, or Middle.
-3. Choose **Capture window**, then focus the target within two seconds. Capture runs natively.
+3. Open the Roblox player. RoClick finds and applies its window automatically, including when Roblox opens after RoClick. **Find Roblox** searches again immediately; no window switching or manual selection is required.
 4. Position the pointer where clicks should land. Press **1** to start, **2** or **Escape** to stop, or **F6** to toggle.
-5. With target focus lock enabled (the default), clicking pauses when the captured window loses focus and resumes when it regains focus. Closing it stops the engine and requires recapture.
+5. With target focus lock enabled (the default), clicking pauses when Roblox loses focus and resumes when it regains focus. Closing Roblox stops the engine. RoClick reconnects when it reopens; press Start again to resume clicking.
 
 The digit shortcuts pass through to the foreground app. Typing 1 in RoClick does not start clicking; 2, F6 and Escape remain global. Typing 2 into a field also stops clicking. The UI Start/Stop button is also available. Capture stops an active session. Settings apply on the native worker, releasing any current press before changing buttons or timing.
 
@@ -48,7 +48,9 @@ The digit shortcuts pass through to the foreground app. Typing 1 in RoClick does
 | **1** / numpad **1** | Start outside RoClick |
 | **2** / numpad **2**, **Escape** | Stop globally |
 | **F6** | Toggle globally |
-| **Capture window** | Stop, then capture the window focused after two seconds |
+| **Find Roblox** | Stop, then find and apply the Roblox player window immediately |
+
+Discovery checks the player executable (`RobloxPlayerBeta.exe`, `RobloxPlayer.exe`, or `Windows10Universal.exe`), so a browser or launcher titled Roblox is not selected. If multiple player windows are open, the foreground player takes priority, otherwise the first eligible window in desktop order is used. RoClick retries once per second while no target is connected. **Clear captured window** in Advanced stops clicking and suspends discovery until **Find Roblox** or a Start shortcut is used.
 
 ### Download for Windows
 
@@ -63,6 +65,14 @@ For development builds, open [Build Windows installer](https://github.com/0xMash
 **Speed means complete down/up clicks successfully submitted by `SendInput`.** The measured rate is a rolling native measurement, updated at most four times per second. It does not measure whether another app received or processed input. Target applications may process fewer clicks. **1,000 clicks/sec is a measured performance target, not a real-time guarantee.**
 
 Advanced settings include focus lock, System/Light/Dark appearance, and press duration. **0 ms** submits down and up together for maximum speed. Longer presses reduce available speed and must be strictly below the interval. Rejected input stops clicking and displays a recovery message. RoClick never elevates itself automatically.
+
+### Automatic updates
+
+Installed release builds check this repository's latest stable GitHub release on launch and every six hours while open. New versions download automatically. RoClick verifies the published SHA-256 checksum and installer version, then installs silently into the existing installation directory after all RoClick windows close. Open RoClick normally afterward to use the new version. Active sessions are never closed by the updater, and Windows is never restarted automatically.
+
+The app shows download progress status and a notice when an update is ready. **Advanced settings → Automatic updates** turns checks and installation on or off; the choice is remembered across restarts and reinstalls. Turning it off also cancels installation of an already downloaded update. Offline checks and download failures leave the app usable and retry after 15 minutes. The helper uses the Windows PowerShell already included with Windows 10/11 and exits after RoClick closes; it installs no service or scheduled task.
+
+For each new version, increment the stable `x.y.z` version in `package.json` and `package-lock.json`, build the installer, and publish a matching `vX.Y.Z` GitHub release containing both `RoClick-Setup.exe` and `SHA256SUMS.txt` from that build. Drafts, prereleases, older versions, and mismatched assets are ignored or rejected. The build workflow still only creates artifacts; it does not publish releases. Existing installations without an updater need this updater-enabled build installed once before future updates can be automatic.
 
 ## Build on Windows
 
@@ -95,6 +105,8 @@ npm run test:native
 
 The Windows build separately compiles/tests the Win32 runtime. Linux tests use virtual time and simulated input; they are not Windows performance measurements.
 
+Updater policy and deferred-install tests run offline with `pwsh -NoProfile -File scripts/test-updates.ps1` on Linux/macOS, or `powershell.exe -NoProfile -File scripts/test-updates.ps1` on Windows. The Windows build runs them with the same Windows PowerShell used by the installed helper. Real Windows upgrade acceptance remains required.
+
 ## Design and architecture
 
 Compact, resizable single window with a character-art header, navy surfaces in dark mode, cyan actions, system typography, keyboard focus visuals, and bilingual accessibility labels. Start/Stop and target capture appear before optional settings. Light/Dark/System modes and a scrolling layout support small windows; high contrast uses system colors and hides decorative artwork.
@@ -107,6 +119,7 @@ Native DWM Desktop Acrylic is requested on supported Windows 11 builds. Windows 
 - `src/native/NativeClickEngine.ts`: typed TurboModule contract.
 - `native/core/Engine.h`: deterministic scheduling/input state machine.
 - `native/windows/Runtime.*`: dedicated worker, waitable timers, process/handle identity, global keyboard and destruction hooks.
+- `native/windows/UpdateService.*`, `scripts/update.ps1`: native helper lifecycle, release checks, verified downloads and deferred silent installation.
 - `windows/RoClick/`: RN Windows New Architecture desktop host and C++ TurboModule.
 - `native/tests/`: virtual-time tests and independent-process local receiver benchmark.
 - `installer/`, `scripts/`, `.github/workflows/`: offline installer, validation, and artifact preparation.

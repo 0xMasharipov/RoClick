@@ -89,7 +89,7 @@ struct ClickEngineModule {
   REACT_METHOD(start) void start() noexcept { roclick::Runtime::Shared().Start(); }
   REACT_METHOD(stop) void stop() noexcept { roclick::Runtime::Shared().Stop(); }
   REACT_METHOD(captureTarget) void captureTarget(double delayMs) noexcept {
-    roclick::Runtime::Shared().CaptureAfter(std::isfinite(delayMs) ? int(std::clamp(delayMs, 500.0, 10000.0)) : 2000);
+    roclick::Runtime::Shared().CaptureAfter(std::isfinite(delayMs) ? int(std::clamp(delayMs, 0.0, 10000.0)) : 0);
   }
   REACT_METHOD(clearTarget) void clearTarget() noexcept { roclick::Runtime::Shared().Clear(); }
   REACT_METHOD(setTheme) void setTheme(std::string value) noexcept {

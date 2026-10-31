@@ -60,7 +60,7 @@ int wmain(int argc, wchar_t **argv) {
   if (!shared->window) { std::cerr << "Receiver did not open.\n"; return 2; }
   SetForegroundWindow(shared->window);
   RECT rect{}; GetWindowRect(shared->window,&rect); SetCursorPos(rect.left+100,rect.top+120);
-  Runtime runtime(false);
+  Runtime runtime(false, Runtime::TargetMode::Foreground);
   runtime.CaptureAfter(500);
   Sleep(750);
   if (!runtime.Read().targetPid) { std::cerr << "Capture failed: requires an unlocked interactive desktop and foreground receiver.\n"; PostMessageW(shared->window,WM_CLOSE,0,0); return 2; }
