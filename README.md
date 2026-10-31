@@ -115,10 +115,11 @@ Brand assets: [vector app icon](assets/roclick-logo.svg) · [PNG app icon](asset
 
 ## Existing published releases
 
-These releases are unchanged and use the previous Python implementation.
+v1.0.0 is the native Windows app with an offline installer. Versions v0.x use the previous Python implementation and remain available unchanged.
 
 | Version | Windows EXE | SHA-256 |
 | --- | --- | --- |
+| **v1.0.0 (latest)** | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.0.0/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.0.0/SHA256SUMS.txt) |
 | v0.2.3 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.3/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.3/RoClick.sha256.txt) |
 | v0.2.2 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.2/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.2/RoClick.sha256.txt) |
 | v0.2.1 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.1/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.1/RoClick.sha256.txt) |
