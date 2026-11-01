@@ -62,6 +62,10 @@ int wmain(int argc, wchar_t **argv) {
     CHECK(Wait([&] { return runtime.Read().targetPid == child.info.dwProcessId; }));
     CHECK(runtime.Read().engine.state == State::Stopped);
     CHECK(runtime.Read().engine.errorKind == ErrorKind::None); CHECK(runtime.Read().engine.clicks == 0);
+    const auto revision = runtime.Read().revision;
+    Sleep(1200); CHECK(runtime.Read().revision == revision); // No idle statistics churn.
+    CHECK(runtime.PrepareForUpdate());
+    runtime.Start(); Sleep(50); CHECK(runtime.Read().engine.state == State::Stopped);
   }
   runtime.Shutdown();
   std::cout << "Windows discovery passed: late launch, executable identity, clear, immediate retry, restart without clicking.\n";

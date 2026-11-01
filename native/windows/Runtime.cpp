@@ -46,7 +46,7 @@ void Runtime::Shutdown() {
   if (worker_.joinable()) worker_.join();
 }
 void Runtime::Enqueue(Command command) {
-  if (shutdown_) return;
+  if (shutdown_ || closingForUpdate_) return;
   {
     std::lock_guard lock(commandsMutex_);
     if (command.op == Op::Configure) {
@@ -75,10 +75,27 @@ void Runtime::Stop() {
   SetEvent(wake_);
 }
 RuntimeSnapshot Runtime::Read() { std::lock_guard lock(snapshotMutex_); return snapshot_; }
+bool Runtime::PrepareForUpdate() {
+  closingForUpdate_ = true; // Hotkeys cannot restart clicking during shutdown.
+  const auto requested = Clock();
+  Stop();
+  for (int attempt = 0; attempt < 2000; ++attempt) {
+    const auto state = Read().engine;
+    if (state.ended >= requested && !state.held && state.state != State::Running && state.state != State::Paused) {
+      return true;
+    }
+    Sleep(1);
+  }
+  closingForUpdate_ = false;
+  return false;
+}
 void Runtime::Work() {
   rateAt_ = Clock();
+  // Reuse both queue buffers. Constructing a deque on every 1 ms tick
+  // allocates and frees its backing storage even when there are no commands.
+  std::deque<Command> pending;
   while (!shutdown_) {
-    std::deque<Command> pending;
+    pending.clear();
     bool stop;
     {
       std::lock_guard lock(commandsMutex_);
@@ -116,7 +133,7 @@ void Runtime::Work() {
       detectAt_ = Clock() + 1000 * Millisecond;
       engine_.TryCaptureTarget();
     }
-    Publish();
+    Publish(stop || !pending.empty());
     const auto remaining = std::max<Time>(100, engine_.NextWake() - Clock());
     LARGE_INTEGER due{}; due.QuadPart = -((remaining + 99) / 100);
     if (!SetWaitableTimerEx(timer_, &due, 0, nullptr, nullptr, nullptr, 0)) {
@@ -133,16 +150,24 @@ void Runtime::Work() {
   Publish();
   ClearTarget();
 }
-void Runtime::Publish() {
+void Runtime::Publish(bool force) {
   const auto now = Clock();
   const auto &s = engine_.Get();
+  if (!force && s.state == publishedState_ && pid_ == publishedPid_ &&
+      now - publishedAt_ < 250 * Millisecond) return;
   if (s.clicks < rateClicks_ || s.started > rateAt_) { rateAt_ = s.started; rateClicks_ = 0; rate_ = 0; }
   if (now - rateAt_ >= 250 * Millisecond) {
     rate_ = double(s.clicks - rateClicks_) * 1'000'000'000.0 / double(now - rateAt_);
     rateClicks_ = s.clicks; rateAt_ = now;
   }
   std::lock_guard lock(snapshotMutex_);
-  snapshot_ = {s, title_, pid_, rate_, stopLatency_, highResolution_};
+  // An idle heartbeat must not cause a new JS event or React render.
+  const bool idle = s.state == State::Stopped || s.state == State::Error;
+  if (!force && snapshot_.revision && idle && s.state == publishedState_ && pid_ == publishedPid_ &&
+      snapshot_.rate == rate_) return;
+  const auto revision = snapshot_.revision + 1;
+  snapshot_ = {s, title_, pid_, rate_, stopLatency_, highResolution_, revision};
+  publishedAt_ = now; publishedState_ = s.state; publishedPid_ = pid_;
 }
 bool Runtime::Capture() {
   ClearTarget();
@@ -176,7 +201,7 @@ bool Runtime::CaptureWindow(HWND window) {
   if (GetWindowThreadProcessId(window, &verifiedPid) != thread || verifiedPid != pid || WaitForSingleObject(process, 0) != WAIT_TIMEOUT) {
     watched_ = nullptr; CloseHandle(process); return false;
   }
-  target_ = window; pid_ = pid; threadId_ = thread; process_ = process; created_ = created;
+  target_ = window; pid_ = pid; threadId_ = thread; process_ = process;
   wchar_t title[512]{}; GetWindowTextW(window, title, 512);
   title_ = title; // Empty titles are localized by the UI.
   return true;
@@ -190,11 +215,10 @@ TargetState Runtime::Target() {
   if (!target_) return TargetState::Missing;
   DWORD pid = 0;
   const DWORD thread = GetWindowThreadProcessId(target_, &pid);
-  FILETIME created{}, exit{}, kernel{}, user{};
-  if (destroyed_ || !IsWindow(target_) || pid != pid_ || thread != threadId_ ||
-      WaitForSingleObject(process_, 0) != WAIT_TIMEOUT ||
-      !GetProcessTimes(process_, &created, &exit, &kernel, &user) ||
-      CompareFileTime(&created_, &created) != 0) return TargetState::Destroyed;
+  // The retained handle refers to the original process object, including after
+  // PID reuse. Re-reading its creation time per click adds no identity check.
+  if (destroyed_ || !thread || pid != pid_ || thread != threadId_ ||
+      WaitForSingleObject(process_, 0) != WAIT_TIMEOUT) return TargetState::Destroyed;
   return GetAncestor(GetForegroundWindow(), GA_ROOT) == target_ ? TargetState::Focused : TargetState::Background;
 }
 Submission Runtime::Input(Button button, bool down, bool pair) {

@@ -12,11 +12,12 @@ struct Fake : Platform {
   bool captureOK = true;
   TargetState captureState = TargetState::Focused;
   int captures = 0;
+  int targetChecks = 0;
   std::deque<Submission> results;
   struct Call { Button button; bool down, pair; Time time; };
   std::vector<Call> calls;
   Time Now() override { return time; }
-  TargetState Target() override { return target; }
+  TargetState Target() override { ++targetChecks; return target; }
   bool Capture() override { ++captures; target = captureOK ? captureState : TargetState::Missing; return captureOK; }
   void ClearTarget() override { target = TargetState::Missing; }
   Submission Input(Button b, bool d, bool p) override {
@@ -54,6 +55,14 @@ int main() {
   CHECK(Valid({1,0,Button::Left,true})); CHECK(Valid({1000,999,Button::Middle,false}));
   CHECK(!Valid({0,0,Button::Left,true})); CHECK(!Valid({1001,0,Button::Left,true}));
   CHECK(!Valid({10,10,Button::Left,true})); CHECK(!Valid({10,-1,Button::Left,true}));
+  { Fake p; Engine e(p);
+    CHECK(e.NextWake() == 1000*Millisecond);
+    e.Start(); p.targetChecks=0; e.Tick();
+    CHECK(p.targetChecks==1); CHECK(e.Get().clicks==1);
+    CHECK(e.NextWake() <= 10*Millisecond);
+    e.Stop(); CHECK(e.NextWake() == 1000*Millisecond);
+    e.CaptureAfter(500); CHECK(e.NextWake() == 500*Millisecond);
+    e.Stop(); p.At(500,e); CHECK(p.captures==0); }
   for (int interval : {1,2,10,100,1000}) {
     Fake p; Engine e(p); e.Configure({interval,0,Button::Left,true}); e.Start();
     for (int ms = 0; ms < 60000; ++ms) p.At(ms,e);

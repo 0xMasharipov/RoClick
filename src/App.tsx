@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Image, PanResponder, Pressable, ScrollView, StyleSheet, Switch, Text,
+import {Image, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Switch, Text,
   TextInput, View, type StyleProp, type ViewStyle} from 'react-native';
 import type {} from 'react-native-windows';
 import Engine, {type ClickConfig, type EngineState, type Theme} from './native/NativeClickEngine';
@@ -98,13 +98,35 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
   const [updates, setUpdates] = useState<UpdateState>();
   const [updateSaving, setUpdateSaving] = useState(false);
   const [updateSaveFailed, setUpdateSaveFailed] = useState(false);
+  const [promptVersion, setPromptVersion] = useState('');
+  const [installing, setInstalling] = useState(false);
+  const [installFailed, setInstallFailed] = useState(false);
+  const promptedVersions = useRef(new Set<string>());
   useEffect(() => {
     let mounted = true;
-    const refresh = () => AppSettings.getUpdateState().then(value => { if (mounted) setUpdates(value); }).catch(() => {});
+    const refresh = () => AppSettings.getUpdateState().then(value => {
+      if (mounted) setUpdates(previous => previous && previous.enabled === value.enabled && previous.state === value.state &&
+        previous.version === value.version && previous.availableVersion === value.availableVersion ? previous : value);
+    }).catch(() => {});
     void refresh();
     const timer = setInterval(refresh, 3000);
     return () => { mounted = false; clearInterval(timer); };
   }, []);
+  useEffect(() => {
+    if (!updates?.enabled || updates.state !== 'ready') { setPromptVersion(''); return; }
+    const version = updates.availableVersion;
+    if (version && !promptedVersions.current.has(version)) {
+      promptedVersions.current.add(version);
+      setInstallFailed(false); setPromptVersion(version);
+    }
+  }, [updates]);
+  const installUpdate = async () => {
+    if (installing) return;
+    setInstalling(true); setInstallFailed(false);
+    try { await AppSettings.installUpdate(); }
+    catch { setInstallFailed(true); }
+    finally { setInstalling(false); }
+  };
   const changeUpdates = async (enabled: boolean) => {
     setUpdateSaving(true); setUpdateSaveFailed(false);
     try {
@@ -145,7 +167,7 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
   const primary: MessageKey = active ? 'stop' : capturing ? 'cancelCapture' : state?.held ? 'retryRelease' : 'start';
   const canStart = !!state && !validation && (!config.lockToTarget || state.targetPid !== 0);
   const errorKey: MessageKey = state?.errorKey ? `error_${state.errorKey}` : 'error_unknown';
-  return <ScrollView style={{flex: 1, backgroundColor: state?.acrylic && !state.highContrast ? 'transparent' : colors.bg}}
+  return <><ScrollView style={{flex: 1, backgroundColor: state?.acrylic && !state.highContrast ? 'transparent' : colors.bg}}
     contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
     <View style={styles.header}>
       <View style={styles.brandRow}>
@@ -202,7 +224,8 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
     {updates?.enabled && (updates.state === 'downloading' || updates.state === 'ready') &&
       <View style={panel}><Text testID="update-notice" accessibilityLiveRegion="polite" style={{color: colors.text}}>
         {t(`update_${updates.state}`, {version: updates.availableVersion})}
-      </Text></View>}
+      </Text>{updates.state === 'ready' && <Action id="open-update" label={t('installUpdate')} colors={colors}
+        onPress={() => { setInstallFailed(false); setPromptVersion(updates.availableVersion); }} style={styles.sectionGap} />}</View>}
     <View style={panel}>
       <View style={styles.row}>
         <View style={styles.grow}><Text style={[styles.label, {color: colors.text}]}>{t('speed')}</Text>
@@ -263,7 +286,26 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
       </View>}
     </View>
     <Text style={[styles.footer, {color: state?.highContrast ? state.textColor : colors.secondary}]}>{t('footer')}</Text>
-  </ScrollView>;
+  </ScrollView>
+    <Modal visible={!!promptVersion} transparent animationType="none" title={t('updateTitle', {version: promptVersion})}
+      onShow={() => AppSettings.requestUpdateAttention()}
+      onRequestClose={() => { if (!installing) setPromptVersion(''); }}>
+      <View style={styles.modalBackdrop} keyDownEvents={[{code: 'Escape'}]}
+        onKeyDown={event => { if (event.nativeEvent.key === 'Escape' && !installing) setPromptVersion(''); }}>
+        <View testID="update-dialog" accessibilityViewIsModal style={[styles.updateDialog, {backgroundColor: colors.panel, borderColor: colors.line}]}>
+          <Text testID="update-dialog-title" accessibilityRole="header" style={[styles.label, {color: colors.text}]}>{t('updateTitle', {version: promptVersion})}</Text>
+          <Text style={[styles.hint, {color: colors.secondary}]}>{t('updateBody')}</Text>
+          {installFailed && <Text testID="update-install-error" accessibilityRole="alert" style={[styles.hint, {color: colors.danger}]}>{t('updateInstallFailed')}</Text>}
+          <View style={[styles.segments, styles.sectionGap]}>
+            <Action id="update-later" label={t('updateLater')} colors={colors} disabled={installing}
+              onPress={() => setPromptVersion('')} style={styles.grow} />
+            <Action id="update-install" label={t(installing ? 'updateInstalling' : 'installUpdate')} primary colors={colors} disabled={installing}
+              onPress={() => { void installUpdate(); }} style={styles.grow} />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  </>;
 }
 
 const styles = StyleSheet.create({
@@ -298,4 +340,6 @@ const styles = StyleSheet.create({
   segments: {flexDirection: 'row', gap: 6, marginTop: 8}, advanced: {marginTop: 16},
   validation: {fontSize: 12, marginTop: 10}, error: {borderWidth: 1, padding: 14, borderRadius: 14},
   footer: {fontSize: 11, textAlign: 'center', lineHeight: 17},
+  modalBackdrop: {flex: 1, backgroundColor: '#00000080', padding: 24, justifyContent: 'center', alignItems: 'center'},
+  updateDialog: {width: '100%', maxWidth: 440, padding: 24, borderWidth: 1, borderRadius: 16},
 });

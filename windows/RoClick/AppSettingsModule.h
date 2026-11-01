@@ -1,6 +1,7 @@
 #pragma once
 #include "NativeModules.h"
 #include "AppLanguage.h"
+#include "WindowAppearance.h"
 #include "../../native/windows/UpdateService.h"
 
 namespace RoClick {
@@ -34,5 +35,14 @@ struct AppSettingsModule {
     if (roclick::UpdateService::Shared().SetEnabled(enabled)) promise.Resolve();
     else promise.Reject("Could not save automatic updates preference.");
   }
+  REACT_METHOD(installUpdate)
+  void installUpdate(winrt::Microsoft::ReactNative::ReactPromise<void> const &promise) noexcept {
+    try {
+      if (roclick::appearance::CloseForUpdate()) promise.Resolve();
+      else promise.Reject("No verified update is ready, or RoClick could not close.");
+    } catch (...) { promise.Reject("Could not start the update."); }
+  }
+  REACT_METHOD(requestUpdateAttention)
+  void requestUpdateAttention() noexcept { roclick::appearance::RequestUpdateAttention(); }
 };
 }

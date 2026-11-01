@@ -152,6 +152,14 @@ try {
       if ($mode -eq 'off') { Assert ($script:downloads -eq 0) 'Contacted the network with updates disabled.' }
     }
   }
+  $script:enabledMode = 'on'; $script:enabledChecks = 0
+  $script:installCalls = 0; $script:otherWindows = 0
+  $script:installerVersion = [version]'9.9.9.0'
+  [IO.File]::WriteAllText($versionFile, '1.0.0')
+  Start-AutomaticUpdates
+  Assert ($script:installCalls -eq 0) 'Installed a mismatched download.'
+  Assert ((Get-Content (Join-Path $script:StateDirectory 'state.txt') -First 1) -eq 'error') 'Advertised an invalid installer as ready.'
+  $script:installerVersion = [version]'1.2.0.0'
   # Exercise the real installer launch boundary and synchronization with only
   # Start-Process replaced, so no fixture is executed on the test machine.
   $script:enabledMode = 'on'; $script:otherWindows = 1

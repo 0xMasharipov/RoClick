@@ -17,6 +17,7 @@ struct RuntimeSnapshot {
   double rate = 0;
   double stopLatencyMs = 0;
   bool highResolution = false;
+  uint64_t revision = 0;
 };
 class Runtime final : private Platform {
  public:
@@ -33,6 +34,7 @@ class Runtime final : private Platform {
   void CaptureAfter(int delayMs);
   void Clear();
   void Shutdown();
+  bool PrepareForUpdate();
   RuntimeSnapshot Read();
   static Time Clock();
  private:
@@ -41,7 +43,7 @@ class Runtime final : private Platform {
   void Enqueue(Command command);
   void Work();
   void Hooks();
-  void Publish();
+  void Publish(bool force = true);
   static LRESULT CALLBACK Keyboard(int code, WPARAM message, LPARAM data);
   static void CALLBACK WindowEvent(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
   Time Now() override { return Clock(); }
@@ -55,6 +57,7 @@ class Runtime final : private Platform {
   HANDLE wake_ = nullptr, timer_ = nullptr, hooksReady_ = nullptr;
   std::thread worker_, hooks_;
   std::atomic<bool> shutdown_{false}, stopRequested_{false};
+  std::atomic<bool> closingForUpdate_{false};
   std::atomic<bool> monitoring_{false};
   std::atomic<Time> stopAt_{0};
   std::atomic<DWORD> hookThreadId_{0};
@@ -66,13 +69,15 @@ class Runtime final : private Platform {
   HWND target_ = nullptr;
   DWORD pid_ = 0, threadId_ = 0;
   HANDLE process_ = nullptr;
-  FILETIME created_{};
   std::wstring title_;
   bool highResolution_ = false;
   const TargetMode targetMode_;
   bool autoDetect_ = true;
   Time detectAt_ = 0;
   Time rateAt_ = 0;
+  Time publishedAt_ = 0;
+  State publishedState_ = State::Stopped;
+  DWORD publishedPid_ = 0;
   uint64_t rateClicks_ = 0;
   double rate_ = 0, stopLatency_ = 0;
   static thread_local Runtime *hookOwner_;

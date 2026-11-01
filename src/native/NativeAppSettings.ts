@@ -7,5 +7,7 @@ export interface Spec extends TurboModule {
   setLanguage(language: Locale): Promise<void>;
   getUpdateState(): Promise<UpdateState>;
   setAutomaticUpdates(enabled: boolean): Promise<void>;
+  installUpdate(): Promise<void>;
+  requestUpdateAttention(): void;
 }
 export default TurboModuleRegistry.getEnforcing<Spec>('AppSettings');

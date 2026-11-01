@@ -114,7 +114,16 @@ UpdateSnapshot UpdateService::Read() {
     // Another instance may have owned the lock and since closed. Retry rather
     // than leaving this window permanently without a helper.
     if ((!helper_ || exited) && std::chrono::steady_clock::now() - launched_ >= std::chrono::minutes(1)) Launch();
-    const auto status = ReadText(job_ + L"\\state.txt", 256);
+    auto status = ReadText(job_ + L"\\state.txt", 256);
+    if (status.substr(0, status.find('\n')) == "otherInstance") {
+      // All windows report the owning helper's download, even after its
+      // original window closed. Only generated job names are accepted.
+      const auto active = ReadText(cache_ + L"\\active-job.txt", 128);
+      if (!active.empty() && active.find_first_not_of("0123456789-") == active.npos) {
+        const auto shared = ReadText(cache_ + L"\\" + std::wstring(active.begin(), active.end()) + L"\\state.txt", 256);
+        if (!shared.empty()) status = shared;
+      }
+    }
     const auto newline = status.find('\n');
     const auto phase = status.substr(0, newline);
     for (const auto allowed : {"checking", "current", "downloading", "ready", "error", "disabled", "otherInstance"}) {

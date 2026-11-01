@@ -23,6 +23,8 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Check PowerShell syntax
         shell: pwsh
         run: ./scripts/test-powershell.ps1
@@ -51,6 +53,12 @@ jobs:
       - name: Installer smoke test and screenshots
         shell: pwsh
         run: ./scripts/smoke-install.ps1
+      - name: Installed automatic upgrades and popup actions
+        shell: pwsh
+        run: ./scripts/test-installed-updates.ps1
+      - name: Compare native performance with v1.1.0
+        shell: pwsh
+        run: ./scripts/compare-performance.ps1
       - name: Upload prepared artifacts (no release publishing)
         if: ${{ always() && steps.build.outcome == 'success' }}
         uses: actions/upload-artifact@v4
@@ -62,6 +70,8 @@ jobs:
             dist/roclick_benchmark.exe
             artifacts/screenshots/*.png
             artifacts/smoke-install.json
+            artifacts/upgrade-tests.json
+            artifacts/performance/*.json
           if-no-files-found: error
       - name: Upload diagnostics
         if: always()
@@ -74,3 +84,5 @@ jobs:
             build/native/Testing/Temporary/LastTest.log
             artifacts/*.log
             artifacts/screenshots/*.png
+            artifacts/upgrade-tests.json
+            artifacts/performance/*.json

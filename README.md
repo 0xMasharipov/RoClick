@@ -70,7 +70,7 @@ Advanced settings include focus lock, System/Light/Dark appearance, and press du
 
 Installed release builds check this repository's latest stable GitHub release on launch and every six hours while open. New versions download automatically. RoClick verifies the published SHA-256 checksum and installer version, then installs silently into the existing installation directory after all RoClick windows close. Open RoClick normally afterward to use the new version. Active sessions are never closed by the updater, and Windows is never restarted automatically.
 
-The app shows download progress status and a notice when an update is ready. **Advanced settings → Automatic updates** turns checks and installation on or off; the choice is remembered across restarts and reinstalls. Turning it off also cancels installation of an already downloaded update. Offline checks and download failures leave the app usable and retry after 15 minutes. The helper uses the Windows PowerShell already included with Windows 10/11 and exits after RoClick closes; it installs no service or scheduled task.
+The app shows download status and immediately opens an **Install now / Later** popup when a verified update is ready, including during gameplay. **Install now** stops clicking and closes all RoClick windows for installation; open RoClick normally afterward. **Later** keeps the app open and installs on normal exit. The popup appears once per version per session; the **Install now** action stays available in the update notice. Windows may flash the taskbar if it blocks foreground activation. **Advanced settings → Automatic updates** turns checks and installation on or off; the choice is remembered across restarts and reinstalls. Turning it off also cancels installation of an already downloaded update. Offline checks and download failures leave the app usable and retry after 15 minutes. The helper uses the Windows PowerShell already included with Windows 10/11 and exits after RoClick closes; it installs no service or scheduled task.
 
 For each new version, increment the stable `x.y.z` version in `package.json` and `package-lock.json`, build the installer, and publish a matching `vX.Y.Z` GitHub release containing both `RoClick-Setup.exe` and `SHA256SUMS.txt` from that build. Drafts, prereleases, older versions, and mismatched assets are ignored or rejected. The build workflow still only creates artifacts; it does not publish releases. Existing installations without an updater need this updater-enabled build installed once before future updates can be automatic.
 
@@ -103,9 +103,11 @@ npm run test:localization
 npm run test:native
 ```
 
+The Windows workflow also compares the v1.1.0 and candidate native runtimes with the same receiver and measurement harness, saving raw JSON and median CPU/rate/stop comparisons. This measures native overhead, not Roblox frame times.
+
 The Windows build separately compiles/tests the Win32 runtime. Linux tests use virtual time and simulated input; they are not Windows performance measurements.
 
-Updater policy and deferred-install tests run offline with `pwsh -NoProfile -File scripts/test-updates.ps1` on Linux/macOS, or `powershell.exe -NoProfile -File scripts/test-updates.ps1` on Windows. The Windows build runs them with the same Windows PowerShell used by the installed helper. Real Windows upgrade acceptance remains required.
+Updater policy and deferred-install tests run offline with `pwsh -NoProfile -File scripts/test-updates.ps1` on Linux/macOS, or `powershell.exe -NoProfile -File scripts/test-updates.ps1` on Windows. The Windows build runs them with the same Windows PowerShell used by the installed helper. The Windows workflow additionally exercises installed upgrades, popup actions, disabling a pending update, and multiple windows using real installers with local download fixtures. Clean Windows 10/11 upgrade acceptance remains required.
 
 ## Design and architecture
 
@@ -128,11 +130,12 @@ Brand assets: [vector app icon](assets/roclick-logo.svg) · [PNG app icon](asset
 
 ## Existing published releases
 
-v1.1.0 adds automatic Roblox detection and verified automatic updates to the native Windows app. Install v1.1.0 once if upgrading from v1.0.0 or earlier. Versions v0.x use the previous Python implementation and remain available unchanged.
+v1.1.1 reduces native scheduling and statistics overhead at high click rates and adds an immediate install popup. v1.1.0 users receive it through their existing updater after closing RoClick; the new popup is available after that upgrade. Install the latest release once if upgrading from v1.0.0 or earlier. Versions v0.x use the previous Python implementation and remain available unchanged.
 
 | Version | Windows EXE | SHA-256 |
 | --- | --- | --- |
-| **v1.1.0 (latest)** | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.0/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.0/SHA256SUMS.txt) |
+| **v1.1.1 (latest)** | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.1/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.1/SHA256SUMS.txt) |
+| v1.1.0 | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.0/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.0/SHA256SUMS.txt) |
 | v1.0.0 | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.0.0/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.0.0/SHA256SUMS.txt) |
 | v0.2.3 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.3/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.3/RoClick.sha256.txt) |
 | v0.2.2 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.2/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.2/RoClick.sha256.txt) |

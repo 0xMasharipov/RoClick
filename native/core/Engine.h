@@ -127,12 +127,13 @@ class Engine {
       return;
     }
     // Detect target destruction even while stopped or unlocked.
-    if (p_.Target() == TargetState::Destroyed) {
+    const auto target = p_.Target();
+    if (target == TargetState::Destroyed) {
       recaptureRequired_ = true;
       p_.ClearTarget(); Fail(ErrorKind::TargetClosed, "The captured window closed. Capture a target again before starting."); return;
     }
     if (!Active()) return;
-    if (!CheckTarget()) return;
+    if (!CheckTarget(target)) return;
     now = p_.Now();
     if (s_.held) {
       if (now < releaseAt_) return;
@@ -165,9 +166,12 @@ class Engine {
   }
   Time NextWake() {
     const auto poll = p_.Now() + 10 * Millisecond;
-    if (s_.state == State::Capturing) return std::min(poll, captureAt_);
+    if (s_.state == State::Capturing) return captureAt_;
     if (s_.state == State::Running) return std::min(poll, s_.held ? releaseAt_ : next_);
-    return poll;
+    if (s_.state == State::Paused) return poll;
+    // Commands and window destruction signal the runtime's wake event.
+    // Only discovery needs an idle heartbeat; no 100 Hz timer while stopped.
+    return p_.Now() + 1000 * Millisecond;
   }
  private:
   Time Interval() const { return s_.config.intervalMs * Millisecond; }
@@ -188,8 +192,8 @@ class Engine {
     s_.error = std::move(message); s_.errorCode = code; s_.errorKind = kind;
     s_.state = State::Error; s_.ended = p_.Now(); captureAt_ = 0;
   }
-  bool CheckTarget() {
-    const auto target = p_.Target();
+  bool CheckTarget() { return CheckTarget(p_.Target()); }
+  bool CheckTarget(TargetState target) {
     if (target == TargetState::Destroyed) {
       recaptureRequired_ = true;
       p_.ClearTarget(); Fail(ErrorKind::TargetClosed, "The captured window closed. Capture a target again before starting."); return false;

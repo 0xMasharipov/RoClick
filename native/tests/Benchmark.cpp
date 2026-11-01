@@ -61,6 +61,9 @@ int wmain(int argc, wchar_t **argv) {
   SetForegroundWindow(shared->window);
   RECT rect{}; GetWindowRect(shared->window,&rect); SetCursorPos(rect.left+100,rect.top+120);
   Runtime runtime(false, Runtime::TargetMode::Foreground);
+  const auto idleCpu = CpuTicks(); const auto idleAt = Runtime::Clock();
+  Sleep(2000);
+  const double idleCpuPercent = double(CpuTicks()-idleCpu)/1e7 / (double(Runtime::Clock()-idleAt)/1e9)*100;
   runtime.CaptureAfter(500);
   Sleep(750);
   if (!runtime.Read().targetPid) { std::cerr << "Capture failed: requires an unlocked interactive desktop and foreground receiver.\n"; PostMessageW(shared->window,WM_CLOSE,0,0); return 2; }
@@ -68,7 +71,8 @@ int wmain(int argc, wchar_t **argv) {
   std::vector<std::thread> loaders;
   for (int n=0;n<loadThreads;++n) loaders.emplace_back([&load] { volatile double v=1; while(load.load(std::memory_order_relaxed)) { v=std::sqrt(v+2.0); } });
   bool passed = true;
-  std::cout << "{\"schema\":1,\"secondsPerRate\":" << seconds << ",\"loadThreads\":" << loadThreads << ",\"samples\":[\n";
+  std::cout << "{\"schema\":2,\"secondsPerRate\":" << seconds << ",\"loadThreads\":" << loadThreads
+    << ",\"stoppedCpuPercentOneCore\":" << idleCpuPercent << ",\"samples\":[\n";
   bool first=true;
   for (const int cps : {10,100,500,1000}) {
     InterlockedExchange64(&shared->received,0); InterlockedExchange64(&shared->downs,0);

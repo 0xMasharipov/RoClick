@@ -45,10 +45,16 @@ struct ClickEngineModule {
   void Initialize(winrt::Microsoft::ReactNative::ReactContext const &) noexcept {
     reporter_ = std::thread([this] {
       winrt::init_apartment(winrt::apartment_type::multi_threaded);
+      uint64_t lastRevision = UINT64_MAX, lastAppearance = UINT64_MAX;
       std::unique_lock lock(mutex_);
       while (!cv_.wait_for(lock, std::chrono::milliseconds(250), [this] { return quit_; })) {
-        if (!observing_ || pending_.exchange(true)) continue;
+        if (!observing_ || pending_) continue;
         const auto r = roclick::Runtime::Shared().Read();
+        const auto appearanceRevision = roclick::appearance::revision.load();
+        const bool refresh = refresh_.exchange(false);
+        if (!refresh && r.revision == lastRevision && appearanceRevision == lastAppearance) continue;
+        if (pending_.exchange(true)) continue;
+        lastRevision = r.revision; lastAppearance = appearanceRevision;
         const auto &s = r.engine;
         EngineEvent e;
         const char *states[] = {"stopped", "running", "paused", "capturing", "error"};
@@ -95,10 +101,10 @@ struct ClickEngineModule {
   REACT_METHOD(setTheme) void setTheme(std::string value) noexcept {
     roclick::appearance::SetTheme(value == "dark" ? 2 : value == "light" ? 1 : 0);
   }
-  REACT_METHOD(observe) void observe(bool enabled) noexcept { observing_ = enabled; pending_ = false; }
+  REACT_METHOD(observe) void observe(bool enabled) noexcept { observing_ = enabled; pending_ = false; refresh_ = enabled; }
   REACT_METHOD(acknowledge) void acknowledge() noexcept { pending_ = false; }
  private:
-  std::atomic<bool> observing_{false}, pending_{false};
+  std::atomic<bool> observing_{false}, pending_{false}, refresh_{true};
   std::mutex mutex_;
   std::condition_variable cv_;
   bool quit_ = false;

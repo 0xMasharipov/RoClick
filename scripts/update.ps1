@@ -144,6 +144,7 @@ function Start-AutomaticUpdates {
     try { $lock = [IO.File]::Open((Join-Path (Split-Path $StateDirectory) 'update.lock'),
         [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None) }
     catch { Write-UpdateState 'otherInstance'; return }
+    [IO.File]::WriteAllText((Join-Path (Split-Path $StateDirectory) 'active-job.txt'), (Split-Path $StateDirectory -Leaf), [Text.Encoding]::ASCII)
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $nextCheck = [DateTime]::MinValue
     $wasEnabled = $false
@@ -169,6 +170,7 @@ function Start-AutomaticUpdates {
               Save-UpdateDownload $update.Installer.browser_download_url $installer 536870912
               if ((Get-Item -LiteralPath $installer).Length -ne $update.Installer.size -or
                   (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash -ine $expectedHash) { throw 'Installer verification failed.' }
+              if ((Get-InstallerVersion $installer) -ne $update.Version) { throw 'Installer version mismatch.' }
               # Wait on the original process object, so a reused PID cannot trigger an install.
               while (-not $parent.HasExited) {
                 Write-UpdateState $(if (Test-UpdatesEnabled) { 'ready' } else { 'disabled' }) $versionText
