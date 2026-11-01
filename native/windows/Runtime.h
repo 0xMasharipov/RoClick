@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include "../core/Engine.h"
 #include <atomic>
-#include <deque>
+#include <vector>
 #include <mutex>
 #include <thread>
 
@@ -64,7 +64,7 @@ class Runtime final : private Platform {
   std::atomic<HWND> watched_{nullptr};
   std::atomic<bool> destroyed_{false};
   std::mutex commandsMutex_, snapshotMutex_;
-  std::deque<Command> commands_;
+  std::vector<Command> commands_;
   RuntimeSnapshot snapshot_;
   HWND target_ = nullptr;
   DWORD pid_ = 0, threadId_ = 0;

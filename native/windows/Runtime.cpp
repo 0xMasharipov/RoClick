@@ -15,6 +15,7 @@ Time Runtime::Clock() {
     (value.QuadPart % frequency) * 1'000'000'000 / frequency;
 }
 Runtime::Runtime(bool installHotkeys, TargetMode targetMode) : targetMode_(targetMode) {
+  commands_.reserve(32);
   wake_ = CreateEventW(nullptr, FALSE, FALSE, nullptr);
   hooksReady_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
   timer_ = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
@@ -91,9 +92,10 @@ bool Runtime::PrepareForUpdate() {
 }
 void Runtime::Work() {
   rateAt_ = Clock();
-  // Reuse both queue buffers. Constructing a deque on every 1 ms tick
-  // allocates and frees its backing storage even when there are no commands.
-  std::deque<Command> pending;
+  // Both bounded command buffers retain capacity across clear/swap on every
+  // STL implementation. Scheduling never constructs a temporary queue per tick.
+  std::vector<Command> pending;
+  pending.reserve(32);
   while (!shutdown_) {
     pending.clear();
     bool stop;
