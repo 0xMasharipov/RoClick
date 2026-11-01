@@ -76,7 +76,9 @@ function Write-UpdateState([string]$Phase, [string]$AvailableVersion = '') {
 }
 
 function Test-UpdatesEnabled {
-  $setting = Get-ItemPropertyValue 'HKCU:\Software\RoClick' -Name AutomaticUpdates -ErrorAction SilentlyContinue
+  # Registry-provider missing-property errors can terminate under strict mode
+  # despite SilentlyContinue. A clean install must default to enabled.
+  $setting = [Microsoft.Win32.Registry]::GetValue('HKEY_CURRENT_USER\Software\RoClick', 'AutomaticUpdates', $null)
   return $null -eq $setting -or $setting -ne 0
 }
 

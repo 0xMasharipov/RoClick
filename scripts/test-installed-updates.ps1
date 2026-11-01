@@ -92,7 +92,7 @@ function Wait-Version([string]$Version) {
 try {
   New-Item $settings -Force | Out-Null
   foreach ($name in @('AutomaticUpdates', 'Language')) {
-    $saved[$name] = Get-ItemPropertyValue $settings -Name $name -ErrorAction SilentlyContinue
+    $saved[$name] = [Microsoft.Win32.Registry]::GetValue('HKEY_CURRENT_USER\Software\RoClick', $name, $null)
   }
   Set-ItemProperty $settings -Name AutomaticUpdates -Value 1 -Type DWord
   Set-ItemProperty $settings -Name Language -Value 'en'
