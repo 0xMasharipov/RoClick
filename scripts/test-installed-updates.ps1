@@ -58,7 +58,11 @@ function Save-UpdateDownload([string]$Url, [string]$Destination, [long]$MaximumB
   $name = if ($Url.EndsWith('/latest')) { 'release.json' } else { ([uri]$Url).Segments[-1] }
   [IO.File]::Copy((Join-Path $fixtureDirectory $name), $Destination, $true)
 }
-Start-AutomaticUpdates
+try { Start-AutomaticUpdates }
+catch {
+  [IO.File]::WriteAllText((Join-Path $fixtureDirectory 'helper-error.txt'), ($_ | Out-String))
+  throw
+}
 '@
   $literal = "'" + $fixture.Replace("'", "''") + "'"
   [IO.File]::WriteAllText((Join-Path $destination 'update.ps1'), $wrapper.Replace('__FIXTURE_DIRECTORY__', $literal), [Text.Encoding]::ASCII)
@@ -166,6 +170,19 @@ try {
     disablePending=$true; multiWindowInstallNow=$true; preferencePersistence=$true
     note='Real native apps/helpers/installers with local downloads. Future fixture is unpublished. Windows Server CI is not Windows 10/11 gameplay validation.'
   } | ConvertTo-Json | Set-Content (Join-Path $root 'artifacts/upgrade-tests.json')
+} catch {
+  $details = @()
+  $cache = Join-Path $env:LOCALAPPDATA 'RoClick/Updates'
+  if (Test-Path $cache) {
+    $details += @(Get-ChildItem $cache -Recurse -File | Where-Object { $_.Name -in @('last-error.txt','state.txt','active-job.txt') } | ForEach-Object {
+      @{path=$_.FullName; text=[IO.File]::ReadAllText($_.FullName)}
+    })
+  }
+  $helperError = Join-Path $fixture 'helper-error.txt'
+  if (Test-Path $helperError) { $details += @{path=$helperError; text=[IO.File]::ReadAllText($helperError)} }
+  $details | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $root 'artifacts/upgrade-errors.json')
+  $details | ConvertTo-Json -Depth 4 | Write-Host
+  throw
 } finally {
   foreach ($process in $apps) { if (-not $process.HasExited) { Stop-Process -Id $process.Id -ErrorAction SilentlyContinue } }
   foreach ($process in $helpers) { if (-not $process.HasExited) { Stop-Process -Id $process.Id -ErrorAction SilentlyContinue } }

@@ -71,6 +71,7 @@ jobs:
             artifacts/screenshots/*.png
             artifacts/smoke-install.json
             artifacts/upgrade-tests.json
+            artifacts/upgrade-errors.json
             artifacts/performance/*.json
           if-no-files-found: error
       - name: Upload diagnostics
@@ -85,4 +86,5 @@ jobs:
             artifacts/*.log
             artifacts/screenshots/*.png
             artifacts/upgrade-tests.json
+            artifacts/upgrade-errors.json
             artifacts/performance/*.json
