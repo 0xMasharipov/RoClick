@@ -11,6 +11,12 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+# A GUI app started by PowerShell 7 inherits its PSModulePath. Windows
+# PowerShell cannot reliably auto-load its script cmdlets from those paths.
+# Resolve bundled OS modules explicitly, regardless of the launching shell.
+Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
+Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1') -ErrorAction Stop
+
 function Get-StableVersion([string]$Value) {
   if ($Value -cnotmatch '^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') { return $null }
   try { return [version]::new([int]$Matches[1], [int]$Matches[2], [int]$Matches[3], 0) }

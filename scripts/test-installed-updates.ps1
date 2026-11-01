@@ -53,6 +53,11 @@ function Set-Fixture([string]$Version, [string]$Installer) {
   $wrapper = @'
 param([string]$AppDirectory, [string]$CurrentVersion, [int]$ParentProcessId, [long]$ParentStarted, [string]$StateDirectory)
 $fixtureDirectory = __FIXTURE_DIRECTORY__
+# The legacy release expects the environment supplied by Explorer. The
+# candidate is deliberately tested with the runner's inherited PS7 paths.
+if ($CurrentVersion -eq '1.1.0') {
+  $env:PSModulePath = (Join-Path $PSHOME 'Modules') + [IO.Path]::PathSeparator + [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine')
+}
 . (Join-Path $AppDirectory 'update-original.ps1') @PSBoundParameters
 function Save-UpdateDownload([string]$Url, [string]$Destination, [long]$MaximumBytes) {
   $name = if ($Url.EndsWith('/latest')) { 'release.json' } else { ([uri]$Url).Segments[-1] }

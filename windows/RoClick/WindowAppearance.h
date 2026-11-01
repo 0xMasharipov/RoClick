@@ -10,7 +10,10 @@ inline std::atomic<bool> acrylic{false}, dark{false}, highContrast{false};
 inline std::atomic<uint64_t> revision{0};
 constexpr UINT ThemeMessage = WM_APP + 41;
 constexpr UINT UpdateAttentionMessage = WM_APP + 42;
-inline UINT InstallUpdateMessage() { return RegisterWindowMessageW(L"RoClick.InstallVerifiedUpdate"); }
+inline UINT InstallUpdateMessage() {
+  static const UINT message = RegisterWindowMessageW(L"RoClick.InstallVerifiedUpdate");
+  return message;
+}
 void Install(HWND hwnd);
 bool CloseForUpdate();
 void RequestUpdateAttention();
