@@ -8,6 +8,8 @@ The candidate defaults to game-friendly mode at 50 ms / 20 clicks/sec, with a 10
 
 The Windows benchmark additionally tests a direct native 1 ms request with game-friendly mode enabled, requiring output at or below 20.5 clicks/sec (finite measurement window), no failures or held button, and stop below 50 ms. Its four legacy throughput trials explicitly disable game-friendly mode; the baseline harness has no mode field. CI also checks installed defaults/presets, localization and automatic upgrades.
 
+Installed testing exposed two UI issues: switching from 1 ms back to game-friendly mode could leave the native interval editor stale, and a fractional rate such as 75 ms (13.33 clicks/sec) caused RNW's integer accessibility conversion to clear the release UI. The editor resets when its allowed range changes; slider accessibility uses a rounded integer with the exact rate retained in its text. Smoke checks cover both transitions and require the UI to remain present after editing. An opt-in `ROCLICK_DIAGNOSTIC_LOG` path captures local UI errors during CI; normal launches write no diagnostic log.
+
 **Gameplay evidence is pending.** A user reported Blade Ball on a Türkiye server increasing from 40–50 ms to 60–100 ms at the 1 ms setting. Reducing click load is a mitigation to evaluate, not a verified server-ping fix. Compare stopped/20/10 clicks/sec in the same server while recording network ping, data ping and FPS. Do not infer game latency from native benchmark results.
 
 ## v1.1.1 release evidence

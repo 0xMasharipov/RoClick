@@ -158,6 +158,8 @@ try {
   if (-not (Find-Control 'validation')) { throw 'Invalid interval was not rejected.' }
   Click-Control 'language-tr'
   Assert-Name 'validation' '50–1.000 ms arasında tam sayı bir aralık gir.'
+  # A fractional CPS rate (75 ms = 13.33 CPS) must not pass a fractional value
+  # to RNW's int64 accessibility property and tear down the release UI.
   (Find-Control 'interval-input').SetFocus()
   $shell.SendKeys('^a75')
   Start-Sleep -Milliseconds 500

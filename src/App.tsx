@@ -44,7 +44,7 @@ function SpeedSlider({interval, minimum, onChange, colors, locale}: {interval: n
   }), []);
   return <View {...responder.panHandlers} accessible focusable accessibilityRole="adjustable"
     testID="speed-slider" accessibilityLabel={t('speed')} accessibilityHint={t('sliderHint')}
-    accessibilityValue={{min: 1, max: 1000 / minimum, now: 1000 / interval, text: t('sliderValue', {rate: formatNumber(1000 / interval, locale, 1), interval})}}
+    accessibilityValue={{min: 1, max: 1000 / minimum, now: Math.round(1000 / interval), text: t('sliderValue', {rate: formatNumber(1000 / interval, locale, 1), interval})}}
     accessibilityActions={[{name: 'increment'}, {name: 'decrement'}]}
     onAccessibilityAction={e => onChange(Math.max(minimum, Math.min(1000, interval + (e.nativeEvent.actionName === 'increment' ? -1 : 1))))}
     onKeyDown={e => {
