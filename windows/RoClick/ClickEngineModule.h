@@ -7,10 +7,11 @@
 namespace RoClick {
 REACT_STRUCT(ClickConfig)
 struct ClickConfig {
-  REACT_FIELD(intervalMs) double intervalMs = 10;
+  REACT_FIELD(intervalMs) double intervalMs = 50;
   REACT_FIELD(pressMs) double pressMs = 0;
   REACT_FIELD(button) std::string button = "left";
   REACT_FIELD(lockToTarget) bool lockToTarget = true;
+  REACT_FIELD(gameMode) bool gameMode = true;
 };
 REACT_STRUCT(EngineEvent)
 struct EngineEvent {
@@ -60,7 +61,7 @@ struct ClickEngineModule {
         const char *states[] = {"stopped", "running", "paused", "capturing", "error"};
         const char *buttons[] = {"left", "right", "middle"};
         e.state = states[static_cast<int>(s.state)];
-        e.config = {double(s.config.intervalMs), double(s.config.pressMs), buttons[static_cast<int>(s.config.button)], s.config.lockToTarget};
+        e.config = {double(s.config.intervalMs), double(s.config.pressMs), buttons[static_cast<int>(s.config.button)], s.config.lockToTarget, s.config.gameMode};
         e.targetTitle = winrt::to_string(r.targetTitle); e.targetPid = r.targetPid;
         e.submittedClicks = double(s.clicks); e.submittedEvents = double(s.inputEvents); e.submittedRate = r.rate;
         e.skipped = double(s.skipped); e.failures = double(s.failures); e.error = s.error; e.errorCode = s.errorCode;
@@ -90,7 +91,7 @@ struct ClickEngineModule {
       roclick::Runtime::Shared().Configure({0,0,roclick::Button::Left,true}); return;
     }
     roclick::Runtime::Shared().Configure({int(c.intervalMs), int(c.pressMs),
-      c.button == "right" ? roclick::Button::Right : c.button == "middle" ? roclick::Button::Middle : roclick::Button::Left, c.lockToTarget});
+      c.button == "right" ? roclick::Button::Right : c.button == "middle" ? roclick::Button::Middle : roclick::Button::Left, c.lockToTarget, c.gameMode});
   }
   REACT_METHOD(start) void start() noexcept { roclick::Runtime::Shared().Start(); }
   REACT_METHOD(stop) void stop() noexcept { roclick::Runtime::Shared().Stop(); }

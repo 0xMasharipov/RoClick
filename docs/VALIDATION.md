@@ -2,6 +2,14 @@
 
 **Status: v1.1.1 installer published for download. Windows 10/11 gameplay and reference-machine acceptance remain pending. No 1,000 clicks/sec guarantee is approved.**
 
+## v1.1.2 candidate
+
+The candidate defaults to game-friendly mode at 50 ms / 20 clicks/sec, with a 100 ms / 10 clicks/sec preset and explicit unrestricted mode. Portable tests verify the native cap for 1/2/10/50 ms requests, slower settings, a 60-second schedule, jitter and stalls without compressed intervals, focus pause/resume, mode changes during held presses, and unrestricted throughput. TypeScript and English/Turkish localization checks pass locally.
+
+The Windows benchmark additionally tests a direct native 1 ms request with game-friendly mode enabled, requiring output at or below 20.5 clicks/sec (finite measurement window), no failures or held button, and stop below 50 ms. Its four legacy throughput trials explicitly disable game-friendly mode; the baseline harness has no mode field. CI also checks installed defaults/presets, localization and automatic upgrades.
+
+**Gameplay evidence is pending.** A user reported Blade Ball on a Türkiye server increasing from 40–50 ms to 60–100 ms at the 1 ms setting. Reducing click load is a mitigation to evaluate, not a verified server-ping fix. Compare stopped/20/10 clicks/sec in the same server while recording network ping, data ping and FPS. Do not infer game latency from native benchmark results.
+
 ## v1.1.1 release evidence
 
 [Windows run 41365958537](https://github.com/0xMasharipov/RoClick/actions/runs/41365958537), commit `015a4de`, passed portable tests, Windows PowerShell tests, native discovery/release tests, MSVC app/installer compilation, installed-app smoke, automatic upgrades and performance comparison. Installer and benchmark download hashes match the build's `SHA256SUMS.txt`.

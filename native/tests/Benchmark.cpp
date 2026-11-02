@@ -71,12 +71,39 @@ int wmain(int argc, wchar_t **argv) {
   std::vector<std::thread> loaders;
   for (int n=0;n<loadThreads;++n) loaders.emplace_back([&load] { volatile double v=1; while(load.load(std::memory_order_relaxed)) { v=std::sqrt(v+2.0); } });
   bool passed = true;
+  std::string gameplayEvidence;
+#ifdef ROCLICK_BENCHMARK_GAME_MODE
+  // Exercise the shipping cap with a direct 1 ms native request, independently
+  // of the UI. The unrestricted trials below must not silently benchmark it.
+  runtime.Configure({1,0,Button::Left,true,true});
+  const auto gameplayAt = Runtime::Clock();
+  runtime.Start();
+  while (Runtime::Clock()-gameplayAt < 2'000'000'000) Sleep(1);
+  const auto gameplayStop = Runtime::Clock(); runtime.Stop();
+  for (int i=0; i<1000 && runtime.Read().engine.ended<gameplayStop; ++i) Sleep(1);
+  const auto gameplay = runtime.Read();
+  const auto &g = gameplay.engine;
+  const double gameplaySeconds = double(g.ended-g.started)/1e9;
+  const double gameplayRate = gameplaySeconds>0 ? double(g.clicks)/gameplaySeconds : 0;
+  const bool gameplayPassed = gameplayRate>0 && gameplayRate<=20.5 && !g.failures && !g.held &&
+    g.state==State::Stopped && g.ended>=gameplayStop && gameplay.stopLatencyMs<50;
+  passed &= gameplayPassed;
+  gameplayEvidence = ",\"gameMode\":{\"requestedIntervalMs\":1,\"submissionRate\":" + std::to_string(gameplayRate) +
+    ",\"submitted\":" + std::to_string(g.clicks) + ",\"passed\":" + (gameplayPassed ? "true" : "false") + "}";
+  Sleep(100);
+#endif
   std::cout << "{\"schema\":2,\"secondsPerRate\":" << seconds << ",\"loadThreads\":" << loadThreads
-    << ",\"stoppedCpuPercentOneCore\":" << idleCpuPercent << ",\"samples\":[\n";
+    << ",\"stoppedCpuPercentOneCore\":" << idleCpuPercent << gameplayEvidence << ",\"samples\":[\n";
   bool first=true;
   for (const int cps : {10,100,500,1000}) {
     InterlockedExchange64(&shared->received,0); InterlockedExchange64(&shared->downs,0);
-    runtime.Configure({1000/cps,0,Button::Left,true});
+    Config config{1000/cps,0,Button::Left,true};
+#ifdef ROCLICK_BENCHMARK_GAME_MODE
+    // Throughput comparison explicitly opts out; legacy sources use this same
+    // harness without the new field. Gameplay limits are tested separately.
+    config.gameMode = false;
+#endif
+    runtime.Configure(config);
     const auto cpu = CpuTicks(); const auto cycles = runtime.WorkerCycles(); const auto wall=Runtime::Clock();
     runtime.Start();
     while(Runtime::Clock()-wall < Time(seconds)*1'000'000'000) Sleep(1);

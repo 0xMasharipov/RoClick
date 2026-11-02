@@ -35,7 +35,7 @@ The installer and this documentation remain in English. To return to automatic W
 
 ## Use
 
-1. Set an interval from **1–1,000 ms** (default **10 ms**, equivalent to 100 clicks/sec).
+1. Start with **Game-friendly mode**, enabled by default: **50 ms / 20 clicks/sec**. Use **10 clicks/sec / 100 ms** if game latency still rises. The slider and interval field use a 50–1,000 ms range in this mode. Turn the mode off to use the unrestricted 1–1,000 ms range.
 2. Select Left, Right, or Middle.
 3. Open the Roblox player. RoClick finds and applies its window automatically, including when Roblox opens after RoClick. **Find Roblox** searches again immediately; no window switching or manual selection is required.
 4. Position the pointer where clicks should land. Press **1** to start, **2** or **Escape** to stop, or **F6** to toggle.
@@ -65,6 +65,14 @@ For development builds, open [Build Windows installer](https://github.com/0xMash
 **Speed means complete down/up clicks successfully submitted by `SendInput`.** The measured rate is a rolling native measurement, updated at most four times per second. It does not measure whether another app received or processed input. Target applications may process fewer clicks. **1,000 clicks/sec is a measured performance target, not a real-time guarantee.**
 
 Advanced settings include focus lock, System/Light/Dark appearance, and press duration. **0 ms** submits down and up together for maximum speed. Longer presses reduce available speed and must be strictly below the interval. Rejected input stops clicking and displays a recovery message. RoClick never elevates itself automatically.
+
+### Game latency and high click rates
+
+Game-friendly mode limits native output to **20 clicks/sec**, including when a caller requests 1 ms, and leaves a full interval between presses after delayed wakes. It preserves slower settings and never replays missed clicks. Higher rates remain available by turning the mode off; the app starts in game-friendly mode on each launch.
+
+A reported Blade Ball session on a Türkiye server rose from roughly 40–50 ms to 60–100 ms at the 1 ms setting. That setting requests 1,000 clicks/sec. Input-triggered game work is a possible contributor: Roblox documents [excessive remote traffic](https://create.roblox.com/docs/performance-optimization/improve) and [replication queue delays](https://create.roblox.com/docs/performance-optimization/identify) as performance issues. RoClick cannot observe Blade Ball's event handling or measure its server ping, so the cause and improvement remain unverified. This update reduces the click load; it does not change network routes or Roblox servers.
+
+For comparison, keep the same server/session and record ping and FPS for 60 seconds each with clicking stopped, at 20 clicks/sec and at 10 clicks/sec. Stop clicking if latency rises; allow it to settle before the next measurement. Record both network ping and data ping where available. The native benchmark only measures local input delivery, not game-server performance.
 
 ### Automatic updates
 

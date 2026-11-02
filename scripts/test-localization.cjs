@@ -28,6 +28,8 @@ assert.equal(formatRate(10, 'tr'), '100');
 assert.equal(formatRate(3, 'tr'), '333,3');
 assert.equal(formatRate(1, 'en'), '1,000');
 assert.equal(translate('tr', 'invalidPress', {max: 9}), '0–9 ms arasında tam sayı bir basılı tutma süresi gir.');
+assert.equal(translate('tr', 'invalidInterval', {min: 50}), '50–1.000 ms arasında tam sayı bir aralık gir.');
+assert.equal(translate('en', 'invalidInterval', {min: 1}), 'Enter a whole interval from 1 to 1,000 ms.');
 assert.match(translate('tr', 'right'), /ğ/);
 assert.match(translate('tr', 'running'), /ı/);
 console.log('Localization passed: key parity, placeholders, native errors, Turkish glyphs and number formatting.');

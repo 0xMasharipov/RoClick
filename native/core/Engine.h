@@ -11,11 +11,15 @@ enum class Button { Left, Right, Middle };
 enum class TargetState { Missing, Focused, Background, Destroyed };
 enum class State { Stopped, Running, Paused, Capturing, Error };
 struct Config {
-  int intervalMs = 10;
+  int intervalMs = 50;
   int pressMs = 0;
   Button button = Button::Left;
   bool lockToTarget = true;
+  bool gameMode = true;
 };
+inline int EffectiveIntervalMs(const Config &c) {
+  return c.gameMode ? std::max(50, c.intervalMs) : c.intervalMs;
+}
 inline bool Valid(const Config &c) {
   return c.intervalMs >= 1 && c.intervalMs <= 1000 && c.pressMs >= 0 &&
     c.pressMs < c.intervalMs && c.button >= Button::Left && c.button <= Button::Middle;
@@ -174,7 +178,7 @@ class Engine {
     return p_.Now() + 1000 * Millisecond;
   }
  private:
-  Time Interval() const { return s_.config.intervalMs * Millisecond; }
+  Time Interval() const { return EffectiveIntervalMs(s_.config) * Millisecond; }
   bool Release() {
     if (!s_.held) return true;
     const auto result = p_.Input(heldButton_, false, false);
@@ -230,9 +234,10 @@ class Engine {
       s_.skipped += static_cast<uint64_t>(missed);
       next_ += missed * Interval();
     }
-    // Keep phase for small wake jitter, but never squeeze a catch-up interval
-    // below 90% of the configured period after a delayed submission.
-    if (next_ - downAt_ < Interval() * 9 / 10) next_ = downAt_ + Interval();
+    // Gameplay pacing leaves a full period after every down, even after jitter.
+    // Unrestricted mode retains phase for small jitter, with a 90% minimum gap.
+    const auto minimumGap = s_.config.gameMode ? Interval() : Interval() * 9 / 10;
+    if (next_ - downAt_ < minimumGap) next_ = downAt_ + Interval();
   }
   Platform &p_;
   Snapshot s_;

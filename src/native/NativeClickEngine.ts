@@ -3,7 +3,7 @@ import type {EventEmitter} from 'react-native/Libraries/Types/CodegenTypes';
 
 export type MouseButton = 'left' | 'right' | 'middle';
 export type Theme = 'system' | 'light' | 'dark';
-export type ClickConfig = {intervalMs: number; pressMs: number; button: MouseButton; lockToTarget: boolean};
+export type ClickConfig = {intervalMs: number; pressMs: number; button: MouseButton; lockToTarget: boolean; gameMode: boolean};
 export type EngineState = {
   state: 'stopped' | 'running' | 'paused' | 'capturing' | 'error';
   config: ClickConfig;

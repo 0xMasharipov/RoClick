@@ -111,8 +111,34 @@ try {
   Start-App
   Click-Control 'language-en'
   Assert-Name 'capture' 'Find Roblox'
+  if ((Find-Control 'interval-input').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -ne '50') {
+    throw 'Game-friendly default interval was not applied.'
+  }
+  Click-Control 'speed-10'
+  if ((Find-Control 'interval-input').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -ne '100') {
+    throw '10 clicks/sec preset was not applied.'
+  }
+  Click-Control 'speed-20'
   # Verify edits and validation survive a live locale switch.
   $shell = New-Object -ComObject WScript.Shell
+  $gameMode = (Find-Control 'game-mode').GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
+  if ($gameMode.Current.ToggleState -ne [System.Windows.Automation.ToggleState]::On) { throw 'Game-friendly mode was not enabled by default.' }
+  $gameMode.Toggle()
+  Start-Sleep -Milliseconds 500
+  (Find-Control 'interval-input').SetFocus()
+  $shell.SendKeys('^a1')
+  Start-Sleep -Milliseconds 500
+  $shell.SendKeys('{ENTER}{TAB}')
+  Start-Sleep -Milliseconds 500
+  Assert-NoValidation
+  if ((Find-Control 'interval-input').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -ne '1') {
+    throw 'Unrestricted 1 ms interval was not applied.'
+  }
+  (Find-Control 'game-mode').GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle()
+  Start-Sleep -Milliseconds 500
+  if ((Find-Control 'interval-input').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -ne '50') {
+    throw 'Enabling game-friendly mode did not clamp a 1 ms interval.'
+  }
   (Find-Control 'interval-input').SetFocus()
   $shell.SendKeys('^a0')
   Start-Sleep -Milliseconds 500
@@ -120,9 +146,9 @@ try {
   Start-Sleep -Milliseconds 500
   if (-not (Find-Control 'validation')) { throw 'Invalid interval was not rejected.' }
   Click-Control 'language-tr'
-  Assert-Name 'validation' '1–1.000 ms arasında tam sayı bir aralık gir.'
+  Assert-Name 'validation' '50–1.000 ms arasında tam sayı bir aralık gir.'
   (Find-Control 'interval-input').SetFocus()
-  $shell.SendKeys('^a25')
+  $shell.SendKeys('^a75')
   Start-Sleep -Milliseconds 500
   $shell.SendKeys('{ENTER}{TAB}')
   Start-Sleep -Milliseconds 500
@@ -136,7 +162,7 @@ try {
     $_.CommandLine -match ('-ParentProcessId ' + $app.Id + '(?:\s|$)')
   })
   if ($helper.Count -ne 1) { throw 'Bundled automatic-update helper did not launch.' }
-  if ((Find-Control 'interval-input').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -ne '25') {
+  if ((Find-Control 'interval-input').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -ne '75') {
     throw 'Language change reset the interval.'
   }
   if (-not (Find-Control 'button-right').GetCurrentPropertyValue([System.Windows.Automation.SelectionItemPattern]::IsSelectedProperty)) {
@@ -220,7 +246,7 @@ try {
   @{install='passed'; bundledLaunch='passed'; reinstall='passed'; uninstall='passed';
     localization='en/tr passed'; languagePersistence='passed'; nativeErrorTranslation='passed';
     pausedLanguageSwitch='passed'; validationLanguageSwitch='passed';
-    automaticRobloxDetection='passed'; unrelatedWindowRejected='passed';
+    gameFriendlyDefaultsAndPresets='passed'; unrestrictedAndModeClamp='passed'; automaticRobloxDetection='passed'; unrelatedWindowRejected='passed';
     bundledUpdateHelper='passed'; automaticUpdatesDisabled='passed';
     cleanMachine='not tested'; versionUpgrade='not tested'; os=[Environment]::OSVersion.VersionString} |
     ConvertTo-Json | Set-Content (Join-Path $artifacts 'smoke-install.json')

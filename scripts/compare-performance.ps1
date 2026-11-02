@@ -47,6 +47,7 @@ try {
       if ($code -eq 2) { throw "$name benchmark setup failed; requires an interactive desktop." }
       $result = Get-Content $file -Raw | ConvertFrom-Json
       if ($result.samples.Count -ne 4) { throw 'Incomplete benchmark output.' }
+      if ($name -eq 'candidate' -and -not $result.gameMode.passed) { throw 'Native game-friendly limit or stop check failed.' }
       $results[$name] += $result
     }
   }

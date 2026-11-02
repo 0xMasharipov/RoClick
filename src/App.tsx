@@ -6,7 +6,7 @@ import Engine, {type ClickConfig, type EngineState, type Theme} from './native/N
 import AppSettings, {type Locale, type UpdateState} from './native/NativeAppSettings';
 import {translate, formatNumber, formatRate, type MessageKey} from './i18n';
 
-const defaults: ClickConfig = {intervalMs: 10, pressMs: 0, button: 'left', lockToTarget: true};
+const defaults: ClickConfig = {intervalMs: 50, pressMs: 0, button: 'left', lockToTarget: true, gameMode: true};
 type Colors = {bg: string; panel: string; text: string; secondary: string; line: string; blue: string; onBlue: string; danger: string};
 const light: Colors = {bg: '#EEF2F7', panel: '#FFFFFF', text: '#142337', secondary: '#506079', line: '#C6D1DF', blue: '#006C85', onBlue: '#FFFFFF', danger: '#B42332'};
 const dark: Colors = {bg: '#101722', panel: '#1B2533', text: '#F1F6FC', secondary: '#A9B9CE', line: '#4A5B72', blue: '#6AD9ED', onBlue: '#10212C', danger: '#FF9CA8'};
@@ -27,12 +27,13 @@ function Action({label, onPress, colors, primary, disabled, style, selected, exp
     <Text style={[styles.actionText, compact && {fontSize: 12}, {color: primary ? colors.onBlue : colors.text}]}>{label}</Text>
   </Pressable>;
 }
-function SpeedSlider({interval, onChange, colors, locale}: {interval: number; onChange: (ms: number) => void; colors: Colors; locale: Locale}) {
+function SpeedSlider({interval, minimum, onChange, colors, locale}: {interval: number; minimum: number; onChange: (ms: number) => void; colors: Colors; locale: Locale}) {
   const t = (key: MessageKey, values?: Record<string, string | number>) => translate(locale, key, values);
   const [width, setWidth] = useState(1);
   const dragStart = useRef(0);
-  const fraction = 1 - Math.log10(interval) / 3;
-  const fromPosition = (x: number) => onChange(Math.max(1, Math.min(1000, Math.round(10 ** (3 * (1 - Math.max(0, Math.min(1, x / width))))))));
+  const range = Math.log10(1000 / minimum);
+  const fraction = Math.max(0, Math.min(1, Math.log10(1000 / interval) / range));
+  const fromPosition = (x: number) => onChange(Math.max(minimum, Math.min(1000, Math.round(1000 / 10 ** (range * Math.max(0, Math.min(1, x / width)))))));
   const changeRef = useRef(fromPosition);
   changeRef.current = fromPosition;
   const responder = useMemo(() => PanResponder.create({
@@ -43,13 +44,13 @@ function SpeedSlider({interval, onChange, colors, locale}: {interval: number; on
   }), []);
   return <View {...responder.panHandlers} accessible focusable accessibilityRole="adjustable"
     testID="speed-slider" accessibilityLabel={t('speed')} accessibilityHint={t('sliderHint')}
-    accessibilityValue={{min: 1, max: 1000, now: 1000 / interval, text: t('sliderValue', {rate: formatNumber(1000 / interval, locale, 1), interval})}}
+    accessibilityValue={{min: 1, max: 1000 / minimum, now: 1000 / interval, text: t('sliderValue', {rate: formatNumber(1000 / interval, locale, 1), interval})}}
     accessibilityActions={[{name: 'increment'}, {name: 'decrement'}]}
-    onAccessibilityAction={e => onChange(Math.max(1, Math.min(1000, interval + (e.nativeEvent.actionName === 'increment' ? -1 : 1))))}
+    onAccessibilityAction={e => onChange(Math.max(minimum, Math.min(1000, interval + (e.nativeEvent.actionName === 'increment' ? -1 : 1))))}
     onKeyDown={e => {
       const key = e.nativeEvent.key;
       if (['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'Home', 'End'].includes(key)) {
-        onChange(key === 'Home' ? 1000 : key === 'End' ? 1 : Math.max(1, Math.min(1000, interval + (key === 'ArrowRight' || key === 'ArrowUp' ? -1 : 1))));
+        onChange(key === 'Home' ? 1000 : key === 'End' ? minimum : Math.max(minimum, Math.min(1000, interval + (key === 'ArrowRight' || key === 'ArrowUp' ? -1 : 1))));
       }
     }}
     keyDownEvents={['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'Home', 'End'].map(code => ({code}))}
@@ -89,7 +90,7 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
   const [config, setConfig] = useState(defaults);
   const configRef = useRef(config);
   const [state, setState] = useState<EngineState>();
-  const [intervalText, setIntervalText] = useState('10');
+  const [intervalText, setIntervalText] = useState(String(defaults.intervalMs));
   const [pressText, setPressText] = useState('0');
   const [validation, setValidation] = useState<'' | 'durationBelow' | 'applyInterval' | 'applyPress' | 'invalidInterval' | 'invalidPress'>('');
   const [advanced, setAdvanced] = useState(false);
@@ -149,8 +150,10 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
   const active = state?.state === 'running' || state?.state === 'paused';
   const capturing = state?.state === 'capturing';
   const panel = [styles.panel, {backgroundColor: colors.panel, borderColor: colors.line}];
+  const minimumInterval = config.gameMode ? 50 : 1;
   const update = (patch: Partial<ClickConfig>) => {
     const next = {...configRef.current, ...patch};
+    if (next.gameMode) next.intervalMs = Math.max(50, next.intervalMs);
     if (next.pressMs >= next.intervalMs) { setValidation('durationBelow'); return; }
     configRef.current = next; setConfig(next); setValidation('');
     setIntervalText(String(next.intervalMs)); setPressText(String(next.pressMs));
@@ -158,7 +161,7 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
   };
   const commit = (field: 'intervalMs' | 'pressMs', value: string) => {
     const n = Number(value);
-    if (!/^\d+$/.test(value) || !Number.isInteger(n) || n < (field === 'intervalMs' ? 1 : 0) || n > (field === 'intervalMs' ? 1000 : config.intervalMs - 1)) {
+    if (!/^\d+$/.test(value) || !Number.isInteger(n) || n < (field === 'intervalMs' ? minimumInterval : 0) || n > (field === 'intervalMs' ? 1000 : config.intervalMs - 1)) {
       setValidation(field === 'intervalMs' ? 'invalidInterval' : 'invalidPress'); return;
     }
     update({[field]: n});
@@ -228,6 +231,15 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
         onPress={() => { setInstallFailed(false); setPromptVersion(updates.availableVersion); }} style={styles.sectionGap} />}</View>}
     <View style={panel}>
       <View style={styles.row}>
+        <Text style={[styles.label, styles.grow, {color: colors.text}]}>{t('gameMode')}</Text>
+        <Switch testID="game-mode" accessibilityLabel={t('gameMode')} value={config.gameMode} onValueChange={gameMode => update({gameMode})} />
+      </View>
+      <Text testID="game-mode-hint" style={[styles.hint, {color: colors.secondary}]}>{t(config.gameMode ? 'gameModeHint' : 'highSpeedHint')}</Text>
+      {config.gameMode && <View style={[styles.segments, styles.sectionGap]}>
+        <Action id="speed-20" label={t('speed20')} selected={config.intervalMs === 50} colors={colors} onPress={() => update({intervalMs: 50})} style={styles.grow} />
+        <Action id="speed-10" label={t('speed10')} selected={config.intervalMs === 100} colors={colors} onPress={() => update({intervalMs: 100})} style={styles.grow} />
+      </View>}
+      <View style={styles.row}>
         <View style={styles.grow}><Text style={[styles.label, {color: colors.text}]}>{t('speed')}</Text>
           <Text style={[styles.hint, {color: colors.secondary}]}>{t('configured', {rate: formatRate(config.intervalMs, locale)})}</Text></View>
         <TextInput testID="interval-input" accessibilityLabel={t('intervalLabel')} value={intervalText}
@@ -237,9 +249,9 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
           style={[styles.input, {color: colors.text, borderColor: colors.line, backgroundColor: colors.bg}]} />
         <Text style={{color: colors.secondary}}>ms</Text>
       </View>
-      <SpeedSlider interval={config.intervalMs} onChange={intervalMs => update({intervalMs})} colors={colors} locale={locale} />
-      <View style={styles.sliderLabels}><Text style={[styles.small, {color: colors.secondary}]}>1 {t('perSecond')}</Text><Text style={[styles.small, {color: colors.secondary}]}>{formatNumber(1000, locale)} {t('perSecond')}</Text></View>
-      {!!validation && <Text testID="validation" accessibilityLiveRegion="polite" style={[styles.validation, {color: colors.danger}]}>{t(validation, {max: config.intervalMs - 1})}</Text>}
+      <SpeedSlider interval={config.intervalMs} minimum={minimumInterval} onChange={intervalMs => update({intervalMs})} colors={colors} locale={locale} />
+      <View style={styles.sliderLabels}><Text style={[styles.small, {color: colors.secondary}]}>1 {t('perSecond')}</Text><Text style={[styles.small, {color: colors.secondary}]}>{formatNumber(1000 / minimumInterval, locale)} {t('perSecond')}</Text></View>
+      {!!validation && <Text testID="validation" accessibilityLiveRegion="polite" style={[styles.validation, {color: colors.danger}]}>{t(validation, {min: minimumInterval, max: config.intervalMs - 1})}</Text>}
       <Text style={[styles.label, styles.sectionGap, {color: colors.text}]}>{t('mouseButton')}</Text>
       <View style={styles.segments}>
         {(['left', 'right', 'middle'] as const).map(button => <Action id={`button-${button}`} key={button}
