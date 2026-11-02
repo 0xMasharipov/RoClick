@@ -1,10 +1,14 @@
 # Release acceptance record
 
-**Status: v1.1.1 installer published for download. Windows 10/11 gameplay and reference-machine acceptance remain pending. No 1,000 clicks/sec guarantee is approved.**
+**Status: v1.1.2 installer published for download. Windows 10/11 gameplay and reference-machine acceptance remain pending. No 1,000 clicks/sec guarantee is approved.**
 
-## v1.1.2 candidate
+## v1.1.2 release evidence
 
-The candidate defaults to game-friendly mode at 50 ms / 20 clicks/sec, with a 100 ms / 10 clicks/sec preset and explicit unrestricted mode. Portable tests verify the native cap for 1/2/10/50 ms requests, slower settings, a 60-second schedule, jitter and stalls without compressed intervals, focus pause/resume, mode changes during held presses, and unrestricted throughput. TypeScript and English/Turkish localization checks pass locally.
+[Windows run 41522411371](https://github.com/0xMasharipov/RoClick/actions/runs/41522411371), commit `7032449`, passed portable and Windows native tests, TypeScript/localization, MSVC app/installer compilation, installed defaults/presets/mode switching, fractional-rate editing, automatic upgrades and native performance comparison. The public stable [v1.1.2 release](https://github.com/0xMasharipov/RoClick/releases/tag/v1.1.2) attaches the installer, checksums, benchmark, installed smoke/upgrade results and raw native measurements. Downloaded build hashes and GitHub asset digests agree.
+
+The direct 1 ms request with game-friendly mode enabled passed all three native trials (20.346, 19.898 and 19.903 clicks/sec). These roughly two-second measurements include the immediate first click; the finite-window acceptance bound is 20.5 clicks/sec. Portable tests separately verify at least 50 ms between down submissions. Unrestricted throughput trials reported zero input failures and maximum observed stop latency of 0.359 ms. Their median 500/1,000 configured rates were approximately 440/792 clicks/sec on the hosted runner, below the performance targets; overall CPU and gameplay improvements are not established.
+
+v1.1.2 defaults to game-friendly mode at 50 ms / 20 clicks/sec, with a 100 ms / 10 clicks/sec preset and explicit unrestricted mode. Portable tests verify the native cap for 1/2/10/50 ms requests, slower settings, a 60-second schedule, jitter and stalls without compressed intervals, focus pause/resume, mode changes during held presses, and unrestricted throughput. TypeScript and English/Turkish localization checks pass locally.
 
 The Windows benchmark additionally tests a direct native 1 ms request with game-friendly mode enabled, requiring output at or below 20.5 clicks/sec (finite measurement window), no failures or held button, and stop below 50 ms. Its four legacy throughput trials explicitly disable game-friendly mode; the baseline harness has no mode field. CI also checks installed defaults/presets, localization and automatic upgrades.
 

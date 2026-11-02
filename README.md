@@ -138,11 +138,12 @@ Brand assets: [vector app icon](assets/roclick-logo.svg) · [PNG app icon](asset
 
 ## Existing published releases
 
-v1.1.1 reduces native scheduling and statistics overhead at high click rates and adds an immediate install popup. v1.1.0 users receive it through their existing updater after closing RoClick; the new popup is available after that upgrade. Install the latest release once if upgrading from v1.0.0 or earlier. Versions v0.x use the previous Python implementation and remain available unchanged.
+v1.1.2 adds default game-friendly pacing, 20/10 clicks/sec presets, and fixes stale interval editing and fractional-rate accessibility errors on Windows. v1.1.1 reduced native scheduling/statistics overhead and added an immediate install popup. v1.1.0 users receive it through their existing updater after closing RoClick; the new popup is available after that upgrade. Install the latest release once if upgrading from v1.0.0 or earlier. Versions v0.x use the previous Python implementation and remain available unchanged.
 
 | Version | Windows EXE | SHA-256 |
 | --- | --- | --- |
-| **v1.1.1 (latest)** | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.1/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.1/SHA256SUMS.txt) |
+| **v1.1.2 (latest)** | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.2/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.2/SHA256SUMS.txt) |
+| v1.1.1 | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.1/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.1/SHA256SUMS.txt) |
 | v1.1.0 | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.0/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.0/SHA256SUMS.txt) |
 | v1.0.0 | [RoClick-Setup.exe](https://github.com/0xMasharipov/RoClick/releases/download/v1.0.0/RoClick-Setup.exe) | [SHA256SUMS.txt](https://github.com/0xMasharipov/RoClick/releases/download/v1.0.0/SHA256SUMS.txt) |
 | v0.2.3 | [RoClick.exe](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.3/RoClick.exe) | [RoClick.sha256.txt](https://github.com/0xMasharipov/RoClick/releases/download/v0.2.3/RoClick.sha256.txt) |
