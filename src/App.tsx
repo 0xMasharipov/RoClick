@@ -242,7 +242,7 @@ function Controls({locale, onLanguage, saveFailed}: {locale: Locale; onLanguage:
       <View style={styles.row}>
         <View style={styles.grow}><Text style={[styles.label, {color: colors.text}]}>{t('speed')}</Text>
           <Text style={[styles.hint, {color: colors.secondary}]}>{t('configured', {rate: formatRate(config.intervalMs, locale)})}</Text></View>
-        <TextInput testID="interval-input" accessibilityLabel={t('intervalLabel')} value={intervalText}
+        <TextInput key={minimumInterval} testID="interval-input" accessibilityLabel={t('intervalLabel')} value={intervalText}
           selectTextOnFocus keyboardType="number-pad" maxLength={4}
           onChangeText={text => { if (text !== intervalText) { setIntervalText(text); setValidation('applyInterval'); } }}
           onEndEditing={event => commit('intervalMs', event.nativeEvent.text)} onSubmitEditing={event => commit('intervalMs', event.nativeEvent.text)}

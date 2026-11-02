@@ -125,6 +125,9 @@ try {
   if ($gameMode.Current.ToggleState -ne [System.Windows.Automation.ToggleState]::On) { throw 'Game-friendly mode was not enabled by default.' }
   $gameMode.Toggle()
   Start-Sleep -Milliseconds 500
+  if ((Find-Control 'game-mode').GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -ne [System.Windows.Automation.ToggleState]::Off) {
+    throw 'Game-friendly mode did not turn off.'
+  }
   (Find-Control 'interval-input').SetFocus()
   $shell.SendKeys('^a1')
   Start-Sleep -Milliseconds 500
@@ -135,9 +138,14 @@ try {
     throw 'Unrestricted 1 ms interval was not applied.'
   }
   (Find-Control 'game-mode').GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle()
-  Start-Sleep -Milliseconds 500
+  for ($attempt=0; $attempt -lt 20; $attempt++) {
+    Start-Sleep -Milliseconds 100
+    $modeState = (Find-Control 'game-mode').GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState
+    $modeInterval = (Find-Control 'interval-input').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
+    if ($modeState -eq [System.Windows.Automation.ToggleState]::On -and $modeInterval -eq '50') { break }
+  }
   if ((Find-Control 'interval-input').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -ne '50') {
-    throw 'Enabling game-friendly mode did not clamp a 1 ms interval.'
+    throw "Enabling game-friendly mode did not clamp a 1 ms interval: mode=$modeState, interval=$modeInterval."
   }
   (Find-Control 'interval-input').SetFocus()
   $shell.SendKeys('^a0')
