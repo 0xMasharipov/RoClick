@@ -94,6 +94,7 @@ function Close-App {
   if (-not $script:app.WaitForExit(10000)) { throw 'App did not close cleanly.' }
 }
 function Assert-NoValidation {
+  if (-not (Find-Control 'app-header')) { throw 'Installed UI disappeared while editing.' }
   if (Find-Control 'validation') { throw 'Unedited fields require validation.' }
 }
 $script:element = $null
@@ -102,6 +103,8 @@ $receiver = $null
 $settingsKey = 'HKCU:\Software\RoClick'
 $previousLanguage = (Get-ItemProperty $settingsKey -Name Language -ErrorAction SilentlyContinue).Language
 $previousAutomaticUpdates = Get-ItemPropertyValue $settingsKey -Name AutomaticUpdates -ErrorAction SilentlyContinue
+$previousDiagnosticLog = $env:ROCLICK_DIAGNOSTIC_LOG
+$env:ROCLICK_DIAGNOSTIC_LOG = Join-Path $artifacts 'installed-app-errors.log'
 try {
   Remove-ItemProperty $settingsKey -Name Language -ErrorAction SilentlyContinue
   # Keep installed-app smoke tests offline and independent of live releases.
@@ -259,11 +262,13 @@ try {
     cleanMachine='not tested'; versionUpgrade='not tested'; os=[Environment]::OSVersion.VersionString} |
     ConvertTo-Json | Set-Content (Join-Path $artifacts 'smoke-install.json')
 } catch {
+  if (Test-Path $env:ROCLICK_DIAGNOSTIC_LOG) { Get-Content $env:ROCLICK_DIAGNOSTIC_LOG -Tail 80 | Write-Host }
   if ($app -and -not $app.HasExited -and $app.MainWindowHandle -ne 0) {
     try { Screenshot 'smoke-failure' } catch { Write-Warning $_ }
   }
   throw
 } finally {
+  $env:ROCLICK_DIAGNOSTIC_LOG = $previousDiagnosticLog
   if ($app -and -not $app.HasExited) { Stop-Process -Id $app.Id -ErrorAction SilentlyContinue }
   if ($receiver -and -not $receiver.HasExited) { Stop-Process -Id $receiver.Id -ErrorAction SilentlyContinue }
   if ($previousLanguage) { Set-ItemProperty $settingsKey -Name Language -Value $previousLanguage }

@@ -11,6 +11,34 @@
 #include "AppSettingsModule.h"
 #include "WindowAppearance.h"
 #include <stdexcept>
+#include <filesystem>
+#include <fstream>
+#include <mutex>
+
+// Opt-in local diagnostics for installed release validation. No logs are
+// written unless the launching environment supplies an explicit file path.
+struct ValidationErrors : winrt::implements<ValidationErrors, winrt::Microsoft::ReactNative::IRedBoxHandler> {
+  explicit ValidationErrors(std::filesystem::path path) : path_(std::move(path)) {}
+  bool IsDevSupportEnabled() noexcept { return true; }
+  void ShowNewError(winrt::Microsoft::ReactNative::IRedBoxErrorInfo const &info,
+      winrt::Microsoft::ReactNative::RedBoxErrorType) noexcept { Write(info); }
+  void UpdateError(winrt::Microsoft::ReactNative::IRedBoxErrorInfo const &info) noexcept { Write(info); }
+  void DismissRedBox() noexcept {}
+ private:
+  void Write(winrt::Microsoft::ReactNative::IRedBoxErrorInfo const &info) noexcept {
+    try {
+      std::lock_guard lock(mutex_);
+      if (std::filesystem::exists(path_) && std::filesystem::file_size(path_) > 1'000'000) return;
+      std::ofstream log(path_, std::ios::app);
+      log << winrt::to_string(info.Message()) << '\n' << winrt::to_string(info.ComponentStack()) << '\n';
+      for (auto const &frame : info.Callstack())
+        log << winrt::to_string(frame.Method()) << " at " << winrt::to_string(frame.File())
+            << ':' << frame.Line() << ':' << frame.Column() << '\n';
+    } catch (...) {} // Diagnostics cannot interrupt input or app shutdown.
+  }
+  std::filesystem::path path_;
+  std::mutex mutex_;
+};
 
 // A PackageProvider containing any turbo modules you define within this app project
 struct CompReactPackageProvider
@@ -56,6 +84,10 @@ static int RunApp() {
 
   // Configure the initial InstanceSettings for the app's ReactNativeHost
   auto settings{reactNativeWin32App.ReactNativeHost().InstanceSettings()};
+  wchar_t diagnosticPath[32768]{};
+  const auto diagnosticLength = GetEnvironmentVariableW(L"ROCLICK_DIAGNOSTIC_LOG", diagnosticPath, 32768);
+  if (diagnosticLength && diagnosticLength < 32768)
+    settings.RedBoxHandler(winrt::make<ValidationErrors>(std::filesystem::path(diagnosticPath)));
   // Register any autolinked native modules
   RegisterAutolinkedNativeModulePackages(settings.PackageProviders());
   // Register any native modules defined within this app project
