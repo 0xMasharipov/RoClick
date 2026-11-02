@@ -4,6 +4,8 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
 $root = Split-Path $PSScriptRoot
 $temporary = Join-Path $env:TEMP ('RoClick-upgrade-' + [guid]::NewGuid().ToString('N'))
 $destination = Join-Path $temporary 'installed'
@@ -32,6 +34,15 @@ function Click-Control([string]$Id) {
   Assert ($null -ne $control) "Missing control: $Id"
   $control.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
   Start-Sleep -Milliseconds 300
+}
+function Screenshot([string]$Name) {
+  $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+  $bitmap = [Drawing.Bitmap]::new($bounds.Width, $bounds.Height)
+  $graphics = [Drawing.Graphics]::FromImage($bitmap)
+  try {
+    $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.Size)
+    $bitmap.Save((Join-Path $root "artifacts/screenshots/$Name.png"), [Drawing.Imaging.ImageFormat]::Png)
+  } finally { $graphics.Dispose(); $bitmap.Dispose() }
 }
 function Install-App([string]$Installer) {
   $process = Start-Process $Installer -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="' + $destination + '"')) -Wait -PassThru
@@ -142,25 +153,27 @@ try {
   Set-Fixture $futureVersion (Join-Path $futureOutput 'RoClick-Setup.exe')
   $app = Start-App
   $helper = Track-Helper $app
-  Wait-Until { $null -ne (Find-Control 'update-dialog') } 'Verified update did not show a popup.'
+  Wait-Until { $null -ne (Find-Control 'update-dialog-title') } 'Verified update did not show a popup.'
   Assert ((Find-Control 'update-dialog-title').Current.Name -eq "RoClick $futureVersion is ready to install") 'Wrong popup version or language.'
+  Screenshot 'update-popup-en'
   Click-Control 'update-later'
   Start-Sleep -Seconds 7
-  Assert ($null -eq (Find-Control 'update-dialog')) 'Later immediately prompted again.'
+  Assert ($null -eq (Find-Control 'update-dialog-title')) 'Later immediately prompted again.'
   Assert (-not $app.HasExited) 'Later closed the app.'
   Click-Control 'language-tr'
   Click-Control 'open-update'
   Assert ((Find-Control 'update-dialog-title').Current.Name.Contains($futureVersion)) 'Language switch lost the update.'
+  Screenshot 'update-popup-tr'
   Click-Control 'update-later'
   Click-Control 'language-en'
   Click-Control 'open-update'
   Set-ItemProperty $settings -Name AutomaticUpdates -Value 0 -Type DWord
-  Wait-Until { $null -eq (Find-Control 'update-dialog') } 'Disabling updates did not dismiss the popup.'
+  Wait-Until { $null -eq (Find-Control 'update-dialog-title') } 'Disabling updates did not dismiss the popup.'
   Assert (-not $app.HasExited) 'Disabling updates closed the app.'
   Set-ItemProperty $settings -Name AutomaticUpdates -Value 1 -Type DWord
   Wait-Until { $null -ne (Find-Control 'open-update') } 'Ready update did not return after enabling updates.'
   $second = Start-App
-  Wait-Until { $null -ne (Find-Control 'update-dialog') } 'Second instance did not report the owning helper update.'
+  Wait-Until { $null -ne (Find-Control 'update-dialog-title') } 'Second instance did not report the owning helper update.'
   Click-Control 'update-install'
   Assert ($app.WaitForExit(15000) -and $second.WaitForExit(15000)) 'Install now did not close all matching windows.'
   Wait-Version $futureVersion
@@ -176,6 +189,7 @@ try {
     note='Real native apps/helpers/installers with local downloads. Future fixture is unpublished. Windows Server CI is not Windows 10/11 gameplay validation.'
   } | ConvertTo-Json | Set-Content (Join-Path $root 'artifacts/upgrade-tests.json')
 } catch {
+  Screenshot 'update-failure'
   $details = @()
   $cache = Join-Path $env:LOCALAPPDATA 'RoClick/Updates'
   if (Test-Path $cache) {
