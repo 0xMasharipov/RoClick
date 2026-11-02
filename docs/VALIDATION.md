@@ -1,8 +1,27 @@
 # Release acceptance record
 
-**Status: v1.1.0 installer published for download. Windows 10/11 reference-machine acceptance is pending. No measured 1,000 clicks/sec claim is approved.**
+**Status: v1.1.1 installer published for download. Windows 10/11 gameplay and reference-machine acceptance remain pending. No 1,000 clicks/sec guarantee is approved.**
 
-## Automated evidence
+## v1.1.1 release evidence
+
+[Windows run 41365958537](https://github.com/0xMasharipov/RoClick/actions/runs/41365958537), commit `015a4de`, passed portable tests, Windows PowerShell tests, native discovery/release tests, MSVC app/installer compilation, installed-app smoke, automatic upgrades and performance comparison. Installer and benchmark download hashes match the build's `SHA256SUMS.txt`.
+
+Installed upgrade tests use actual v1.1.0, v1.1.1 and an **unpublished v1.1.2 fixture**, replacing only the download boundary with local assets. They verify v1.1.0 → v1.1.1 installation after normal exit, the immediate English/Turkish popup, Later without repeated prompting, disabling a pending update, preference persistence, and Install now closing two matching app windows before installation. The legacy test uses normal Windows PowerShell module paths; the candidate also handles inherited PowerShell 7 paths. Actual popup captures are in the run's artifact (`update-popup-en.png`, `update-popup-tr.png`); their 1.1.2 labels belong to the private fixture.
+
+The native comparison runs three alternating trials per version on the same Windows Server 2022 hosted runner, 10 seconds per rate. Both use the same independent receiver/harness; the baseline worker implementation is unchanged except for the identical read-only cycle accessor.
+
+| Configured clicks/sec | Baseline worker cycles/click | v1.1.1 worker cycles/click | Cycle reduction | v1.1.1 submitted clicks/sec |
+| --- | --- | --- | --- | --- |
+| 10 | 1,402,110 | 921,682 | 34.3% | 10.10 |
+| 100 | 258,595 | 188,143 | 27.2% | 100.04 |
+| 500 | 168,881 | 149,817 | 11.3% | 432.23 |
+| 1,000 | 148,098 | 132,997 | 10.2% | 784.13 |
+
+No input failures were observed; maximum observed stop latency was 0.397 ms. **Whole-process CPU readings were mixed:** the median one-core percentages at 500 and 1,000 configured clicks/sec rose from 1.09% to 1.25% and 2.50% to 2.65%, while the 100 clicks/sec sample fell from 1.87% to 0.47%. These accounting samples are coarse; no overall CPU reduction or Roblox frame-rate improvement is established. Worker cycles measure scheduling work and cannot be converted to elapsed time across CPU frequencies. Neither version achieved the fastest rate targets on this runner.
+
+The release attaches [performance-comparison.json](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.1/performance-comparison.json), [raw performance trials](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.1/native-performance-evidence.zip), and [installed-upgrade results](https://github.com/0xMasharipov/RoClick/releases/download/v1.1.1/upgrade-tests.json). Real Roblox gameplay measurements and clean Windows 10/11 upgrades remain outstanding.
+
+## Earlier v1.1.0 automated evidence
 
 | Check | Evidence/status |
 | --- | --- |
