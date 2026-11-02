@@ -36,6 +36,11 @@ class Runtime final : private Platform {
   void Shutdown();
   bool PrepareForUpdate();
   RuntimeSnapshot Read();
+  uint64_t WorkerCycles() {
+    ULONG64 cycles = 0;
+    QueryThreadCycleTime(worker_.native_handle(), &cycles);
+    return cycles;
+  }
   static Time Clock();
  private:
   enum class Op { Configure, Start, Stop, Toggle, Capture, Clear, Error };

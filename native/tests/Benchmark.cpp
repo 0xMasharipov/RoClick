@@ -77,12 +77,13 @@ int wmain(int argc, wchar_t **argv) {
   for (const int cps : {10,100,500,1000}) {
     InterlockedExchange64(&shared->received,0); InterlockedExchange64(&shared->downs,0);
     runtime.Configure({1000/cps,0,Button::Left,true});
-    const auto cpu = CpuTicks(); const auto wall=Runtime::Clock();
+    const auto cpu = CpuTicks(); const auto cycles = runtime.WorkerCycles(); const auto wall=Runtime::Clock();
     runtime.Start();
     while(Runtime::Clock()-wall < Time(seconds)*1'000'000'000) Sleep(1);
     const auto stop = Runtime::Clock(); runtime.Stop();
     for (int i=0;i<1000 && runtime.Read().engine.ended<stop;++i) Sleep(1);
     const auto result=runtime.Read(); const auto &s=result.engine;
+    const auto workerCycles = runtime.WorkerCycles() - cycles;
     const double elapsed=double(s.ended-s.started)/1e9;
     const double rate=elapsed>0 ? double(s.clicks)/elapsed : 0;
     const double cpuPercent=double(CpuTicks()-cpu)/1e7 / (double(Runtime::Clock()-wall)/1e9)*100;
@@ -94,6 +95,7 @@ int wmain(int argc, wchar_t **argv) {
       << ",\"submitted\":" << s.clicks << ",\"received\":" << shared->received
       << ",\"receiverDowns\":" << shared->downs << ",\"submissionRate\":" << rate
       << ",\"cpuPercentOneCore\":" << cpuPercent << ",\"stopMs\":" << result.stopLatencyMs
+      << ",\"workerCycles\":" << workerCycles << ",\"workerCyclesPerClick\":" << (s.clicks ? double(workerCycles)/double(s.clicks) : 0)
       << ",\"gapMeanMs\":" << s.gapMeanMs << ",\"gapStdDevMs\":" << (s.gapCount>1 ? std::sqrt(s.gapM2/double(s.gapCount-1)) : 0)
       << ",\"gapMinMs\":" << s.gapMinMs << ",\"gapMaxMs\":" << s.gapMaxMs
       << ",\"skipped\":" << s.skipped << ",\"failures\":" << s.failures
